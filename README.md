@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pulse
 
-## Getting Started
+Un projet Next.js moderne avec Prisma et PostgreSQL pour la gestion d'événements et d'artistes.
 
-First, run the development server:
+## 🚀 Démarrage rapide
 
+### Prérequis
+- Node.js 18+
+- Docker et Docker Compose
+- npm ou yarn
+
+### Installation complète
+
+1. **Cloner le projet**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <votre-repo>
+cd Pulse
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Installer les dépendances**
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Configurer l'environnement**
+```bash
+# Créer le fichier .env avec la bonne configuration
+echo 'DATABASE_URL="postgresql://postgres:postgres@localhost:5432/pulse?schema=public"' > .env
+echo 'NODE_ENV="development"' >> .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. **Vérifier que Docker est démarré**
+```bash
+docker ps
+```
 
-## Learn More
+5. **Démarrer la base de données PostgreSQL**
+```bash
+npm run docker:up
+```
 
-To learn more about Next.js, take a look at the following resources:
+6. **Vérifier que PostgreSQL répond sur le bon port**
+```bash
+nc -zv localhost 5432
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+7. **Générer le client Prisma**
+```bash
+npm run db:generate
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+8. **Synchroniser la base de données avec le schéma**
+```bash
+npm run db:push
+```
 
-## Deploy on Vercel
+9. **Tester Prisma Studio (optionnel)**
+```bash
+npm run db:studio
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+10. **Lancer le serveur de développement**
+```bash
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🗄️ Base de données
+
+### Scripts disponibles
+- `npm run db:generate` - Générer le client Prisma
+- `npm run db:push` - Pousser le schéma vers la base
+- `npm run db:migrate` - Créer et appliquer une migration
+- `npm run db:studio` - Ouvrir Prisma Studio
+- `npm run db:reset` - Réinitialiser la base de données
+
+### Docker
+- `npm run docker:up` - Démarrer PostgreSQL
+- `npm run docker:down` - Arrêter PostgreSQL
+- `npm run docker:logs` - Voir les logs
+
+## 🏗️ Structure du projet
+
+```
+Pulse/
+├── prisma/
+│   └── schema.prisma      # Schéma de base de données
+├── src/
+│   ├── app/               # Pages Next.js
+│   └── generated/         # Client Prisma généré
+├── lib/
+│   └── prisma.ts         # Configuration Prisma
+└── docker-compose.yml     # Configuration PostgreSQL
+```
+
+## 🔧 Configuration
+
+Le projet utilise :
+- **Next.js 15** avec App Router
+- **Prisma 6** pour l'ORM
+- **PostgreSQL 16** dans Docker
+- **TypeScript** pour le typage
+
+
+
+## 🚀 Déploiement
+
+Pour la production, assurez-vous de :
+1. Configurer une base de données PostgreSQL externe
+2. Mettre à jour `DATABASE_URL` dans vos variables d'environnement
+3. Exécuter `npm run db:migrate` pour appliquer les migrations
+4. Construire l'application avec `npm run build`

@@ -13,3 +13,43 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Events {
+  id          Int      @id @default(autoincrement())
+  title       String
+  desc        String
+  start_date  DateTime
+  genre       Genre
+  type        EventType
+  location    String?
+  latitude    Float?
+  longitude   Float?
+  artist_id   Int?
+
+  @@map("events")
+}
+
+model Artists {
+  id          Int      @id @default(autoincrement())
+  name        String
+  desc        String?
+  image_url   String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("artists")
+}
+
+enum Genre {
+  RAP
+  RNB
+  REGGAE
+  ROCK
+}
+enum EventType {
+  CONCERT
+  FESTIVAL
+  SHOWCASE
+  OTHER
+}
+
