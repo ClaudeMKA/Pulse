@@ -4,7 +4,7 @@ import { prisma } from "../../../../lib/prisma";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, desc, image_url } = body;
+    const { name, desc, image_path } = body;
 
     // Validation côté serveur
     if (!name || typeof name !== "string" || name.trim().length < 2) {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: name.trim(),
         desc: desc?.trim() || null,
-        image_url: image_url?.trim() || null,
+        image_path: image_path?.trim() || null,
       },
     });
 

@@ -14,6 +14,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Artists {
+  id          Int      @id @default(autoincrement())
+  name        String
+  desc        String?
+  image_path  String?  // Chemin local de l'image
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("artists")
+}
+
 model Events {
   id          Int      @id @default(autoincrement())
   title       String
@@ -24,20 +35,10 @@ model Events {
   location    String?
   latitude    Float?
   longitude   Float?
+  image_path  String?  // Chemin local de l'image
   artist_id   Int?
 
   @@map("events")
-}
-
-model Artists {
-  id          Int      @id @default(autoincrement())
-  name        String
-  desc        String?
-  image_url   String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  @@map("artists")
 }
 
 enum Genre {

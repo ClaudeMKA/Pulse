@@ -1,32 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 interface ArtistFormData {
   name: string;
   desc: string;
-  image_url: string;
+  image_path: string;
 }
 
 export default function CreateArtistPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<ArtistFormData>({
     name: "",
     desc: "",
-    image_url: "",
+    image_path: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<Partial<ArtistFormData>>({});
+  const [previewImage, setPreviewImage] = useState<string>("");
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Effacer l'erreur quand l'utilisateur tape
     if (errors[name as keyof ArtistFormData]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validation du fichier
+    if (!file.type.startsWith("image/")) {
+      alert("Veuillez sélectionner une image valide");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("L'image ne doit pas dépasser 5MB");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "artists");
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setFormData(prev => ({ ...prev, image_path: result.path }));
+        setPreviewImage(result.path);
+      } else {
+        const error = await response.json();
+        alert(`Erreur upload: ${error.message}`);
+      }
+    } catch (error) {
+      console.error("Erreur upload:", error);
+      alert("Erreur lors de l'upload de l'image");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -45,21 +90,8 @@ export default function CreateArtistPage() {
       newErrors.desc = "La description doit contenir au moins 10 caractères";
     }
 
-    if (formData.image_url && !isValidUrl(formData.image_url)) {
-      newErrors.image_url = "L'URL de l'image n'est pas valide";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const isValidUrl = (string: string): boolean => {
-    try {
-      new URL(string);
-      return true;
-    } catch (_) {
-      return false;
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,44 +185,50 @@ export default function CreateArtistPage() {
             </p>
           </div>
 
-          {/* URL de l'image */}
+          {/* Upload d'image */}
           <div>
-            <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-2">
-              URL de l'image de profil
+            <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
+              Image de profil
             </label>
-            <input
-              type="url"
-              id="image_url"
-              name="image_url"
-              value={formData.image_url}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.image_url ? "border-red-300" : "border-gray-300"
-              }`}
-              placeholder="https://example.com/image.jpg"
-            />
-            {errors.image_url && (
-              <p className="mt-1 text-sm text-red-600">{errors.image_url}</p>
-            )}
+            <div className="flex items-center space-x-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                id="image"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {uploading ? "Upload en cours..." : "Sélectionner une image"}
+              </button>
+              {formData.image_path && (
+                <span className="text-sm text-green-600">
+                  ✓ Image uploadée
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-sm text-gray-500">
-              Optionnel - URL d'une image de profil
+              Formats acceptés: JPG, PNG, GIF. Taille max: 5MB
             </p>
           </div>
 
           {/* Aperçu de l'image */}
-          {formData.image_url && !errors.image_url && (
+          {previewImage && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Aperçu de l'image
               </label>
               <div className="w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden">
                 <img
-                  src={formData.image_url}
+                  src={previewImage}
                   alt="Aperçu"
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
                 />
               </div>
             </div>
@@ -207,7 +245,7 @@ export default function CreateArtistPage() {
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || uploading}
               className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
