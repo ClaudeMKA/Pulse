@@ -1,11 +1,12 @@
 
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider"; // ← Utiliser notre composant
+import { titlesFont } from "@/app/fonts/pulse";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
 });
 
@@ -27,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${bricolage.variable} ${geistMono.variable} ${titlesFont.variable} antialiased`}
       >
         <SessionProvider>
           {children}
