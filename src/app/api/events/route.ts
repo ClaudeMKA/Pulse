@@ -173,11 +173,19 @@ export async function GET(request: NextRequest) {
     // Calculer le skip pour la pagination
     const skip = (page - 1) * limit;
 
-    // Récupérer les événements avec pagination
+    // Récupérer les événements avec pagination ET la relation artist
     const [events, total] = await Promise.all([
       prisma.events.findMany({
         where,
-        // Supprimer l'include pour l'instant
+        include: {
+          artist: {
+            select: {
+              id: true,
+              name: true,
+              image_path: true,
+            },
+          },
+        },
         orderBy: {
           start_date: "asc",
         },
