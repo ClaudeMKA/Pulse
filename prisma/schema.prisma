@@ -14,6 +14,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Users {
+  id          Int      @id @default(autoincrement())
+  username    String   @unique // ← Corrigé "usermane" en "username"
+  email       String   @unique // ← Ajouté @unique
+  password    String
+  role        Role     @default(ADMIN) // ← Ajouté valeur par défaut
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt // ← Ajouté pour le suivi
+
+  @@map("users")
+}
+
 model Artists {
   id          Int      @id @default(autoincrement())
   name        String
@@ -54,5 +66,9 @@ enum EventType {
   FESTIVAL
   SHOWCASE
   OTHER
+}
+enum Role {
+  USER
+  ADMIN
 }
 

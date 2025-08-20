@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -18,6 +20,23 @@ export default function AdminLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Protection des routes admin
+  useEffect(() => {
+    if (status === "loading") return;
+    
+    if (!session) {
+      router.push("/auth/login");
+      return;
+    }
+
+    if (session.user.role !== "ADMIN") {
+      router.push("/auth/login?error=unauthorized");
+      return;
+    }
+  }, [session, status, router]);
 
   const navigation: SidebarItem[] = [
     {
@@ -50,6 +69,27 @@ export default function AdminLayout({
     },
   ];
 
+  const handleSignOut = () => {
+    signOut({ callbackUrl: "/auth/login" });
+  };
+
+  // Affichage de chargement pendant la vérification
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Vérification de l'authentification...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirection si non autorisé
+  if (!session || session.user.role !== "ADMIN") {
+    return null; // Le middleware s'occupera de la redirection
+  }
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar mobile overlay */}
@@ -62,7 +102,7 @@ export default function AdminLayout({
         </div>
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixe à gauche */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -116,20 +156,34 @@ export default function AdminLayout({
           </div>
         </nav>
 
-        {/* Footer de la sidebar */}
+        {/* Footer de la sidebar avec bouton de déconnexion */}
         <div className="absolute bottom-0 w-full p-4 border-t border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Admin</p>
-              <p className="text-xs text-gray-500">Administrateur</p>
+          <div className="space-y-3">
+            {/* Profil utilisateur */}
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">{session.user.username}</p>
+                <p className="text-xs text-gray-500">{session.user.role}</p>
+              </div>
             </div>
+            
+            {/* Bouton de déconnexion */}
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Déconnexion
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Contenu principal */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Contenu principal - Avec marge à gauche pour la sidebar */}
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         {/* Header mobile */}
         <div className="lg:hidden bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-4 py-3">
@@ -142,11 +196,18 @@ export default function AdminLayout({
               </svg>
             </button>
             <h1 className="text-lg font-semibold text-gray-900">Pulse Admin</h1>
-            <div className="w-6"></div>
+            <button
+              onClick={handleSignOut}
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
           </div>
         </div>
 
-        {/* Contenu */}
+        {/* Contenu des pages admin */}
         <main className="flex-1 overflow-y-auto bg-gray-100">
           {children}
         </main>

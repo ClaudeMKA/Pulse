@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 interface DashboardStats {
   totalEvents: number;
@@ -108,6 +109,7 @@ export default function AdminDashboard() {
   }
 
   return (
+    <ProtectedRoute> 
     <div className="max-w-7xl mx-auto p-6">
       {/* En-tête */}
       <div className="mb-8">
@@ -387,5 +389,6 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
