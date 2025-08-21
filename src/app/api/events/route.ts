@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { requireAdminAuth } from "../../../../lib/api-auth";
+import { NotificationScheduler } from "../../../../lib/notificationScheduler";
 
 export async function POST(request: NextRequest) {
   // Vérifier l'authentification admin
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
         desc: desc.trim(),
         start_date: eventDate,
         genre: genre as "RAP" | "RNB" | "REGGAE" | "ROCK",
-        type: type as "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER",
+        type: type as "CONCERT" | "ACCOUSTIQUE" | "SHOWCASE" | "OTHER",
         location: location.trim(),
         latitude: latitude !== null ? Number(latitude) : null,
         longitude: longitude !== null ? Number(longitude) : null,
@@ -119,6 +120,9 @@ export async function POST(request: NextRequest) {
       },
       // Supprimer l'include pour l'instant
     });
+
+    // Planifier les notifications automatiquement
+    await NotificationScheduler.scheduleEventNotifications(event.id);
 
     return NextResponse.json(event, { status: 201 });
   } catch (error) {

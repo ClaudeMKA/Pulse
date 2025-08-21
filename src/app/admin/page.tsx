@@ -117,6 +117,23 @@ export default function AdminDashboard() {
     return <div>Chargement...</div>;
   }
 
+  const startScheduler = async () => {
+    try {
+      const response = await fetch('/api/cron/start-scheduler', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        alert('Planificateur de notifications démarré !');
+      } else {
+        alert('Erreur lors du démarrage du planificateur');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors du démarrage du planificateur');
+    }
+  };
+
   return (
     <ProtectedRoute> 
     <div className="max-w-7xl mx-auto p-6">
@@ -459,6 +476,18 @@ export default function AdminDashboard() {
               </LinkButton>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Système de Notifications</h3>
+        <div className="flex space-x-4">
+          <button
+            onClick={startScheduler}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            🚀 Démarrer le Planificateur
+          </button>
         </div>
       </div>
     </div>

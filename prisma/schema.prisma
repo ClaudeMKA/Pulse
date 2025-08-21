@@ -32,7 +32,6 @@ model Artists {
   desc        String?
   image_path  String?
   events      Events[]
-  stands      Stands[]
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -53,7 +52,7 @@ model Events {
   image_path  String?
   artist_id   Int?
   artist      Artists? @relation(fields: [artist_id], references: [id])
-  stands      Stands[] // ← Relation avec les stands
+  notifications EventNotifications[] // ← Ajouter cette relation
   created_at  DateTime @default(now()) // ← Ajouté
   updated_at  DateTime @updatedAt // ← Ajouté
 
@@ -66,16 +65,37 @@ model Stands {
   description String?
   capacity    Int?     // Capacité du stand
   price       Float?   // Prix du stand
-  is_available Boolean @default(true)
+  type        StandType
+  opened_at   DateTime
+  closed_at   DateTime
   image_path  String?
-  event_id    Int      // Relation obligatoire avec un événement
-  event       Events   @relation(fields: [event_id], references: [id], onDelete: Cascade)
-  artist_id   Int?     // Relation optionnelle avec un artiste
-  artist      Artists? @relation(fields: [artist_id], references: [id])
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   @@map("stands")
+}
+
+model EventNotifications {
+  id          Int      @id @default(autoincrement())
+  event_id    Int      // Événement concerné
+  event       Events   @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  type        ReminderType // Type de rappel
+  title       String   // "Rappel événement"
+  message     String   // "Artiste1 joue dans 1h, Localisation1"
+  sent_at     DateTime? // Quand la notification a été envoyée
+  is_sent     Boolean  @default(false) // Si elle a été envoyée
+  scheduled_for DateTime // Quand elle doit être envoyée
+  created_at  DateTime @default(now())
+
+  @@map("event_notifications")
+}
+
+enum StandType {
+  FOOD
+  ACTIVITE
+  TATOOS
+  SOUVENIRS
+  MERCH
 }
 
 enum Genre {
@@ -87,7 +107,7 @@ enum Genre {
 
 enum EventType {
   CONCERT
-  FESTIVAL
+  ACCOUSTIQUE
   SHOWCASE
   OTHER
 }
@@ -95,5 +115,10 @@ enum EventType {
 enum Role {
   USER
   ADMIN
+}
+
+enum ReminderType {
+  ONE_HOUR_BEFORE
+  TEN_MINUTES_BEFORE
 }
 
