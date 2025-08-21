@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { PrimaryButton, SecondaryButton, LinkButton } from "@/components/ui/buttons";
+
 
 interface DashboardStats {
   totalEvents: number;
@@ -32,6 +35,7 @@ interface RecentArtist {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
   const [recentArtists, setRecentArtists] = useState<RecentArtist[]>([]);
@@ -106,6 +110,11 @@ export default function AdminDashboard() {
         </div>
       </div>
     );
+  }
+
+  // Corriger les erreurs de stats null
+  if (!stats) {
+    return <div>Chargement...</div>;
   }
 
   return (
@@ -194,42 +203,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Statistiques secondaires */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Activité ce mois */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Activité ce mois</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Nouveaux événements</span>
-                <span className="text-sm font-medium text-gray-900">{stats.eventsThisMonth}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Nouveaux artistes</span>
-                <span className="text-sm font-medium text-gray-900">{stats.artistsThisMonth}</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Répartition des événements */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Répartition des événements</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Événements passés</span>
-                <span className="text-sm font-medium text-gray-900">{stats.pastEvents}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Taux de complétion</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {stats.totalEvents > 0 ? Math.round((stats.pastEvents / stats.totalEvents) * 100) : 0}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Contenu récent */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -339,53 +313,152 @@ export default function AdminDashboard() {
       </div>
 
       {/* Actions rapides */}
-      <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Actions rapides</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/admin/events/new"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
-          >
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
+      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Section Artistes */}
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Total Artistes</dt>
+                  <dd className="text-lg font-medium text-gray-900">{stats.totalArtists}</dd>
+                </dl>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-gray-900">Nouvel événement</p>
-              <p className="text-sm text-gray-500">Créer un événement</p>
+          </div>
+          <div className="bg-gray-50 px-5 py-3">
+            <div className="flex justify-between items-center">
+              <LinkButton 
+                href="/admin/artists" 
+                variant="primary" 
+                size="sm"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                }
+              >
+                Voir tous
+              </LinkButton>
+              <LinkButton 
+                href="/admin/artists/new" 
+                variant="default" 
+                size="sm"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                }
+              >
+                Ajouter
+              </LinkButton>
             </div>
-          </Link>
+          </div>
+        </div>
 
-          <Link
-            href="/admin/artists/new"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors"
-          >
-            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
+        {/* Section Événements */}
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Total Événements</dt>
+                  <dd className="text-lg font-medium text-gray-900">{stats.totalEvents}</dd>
+                </dl>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-gray-900">Nouvel artiste</p>
-              <p className="text-sm text-gray-500">Ajouter un artiste</p>
+          </div>
+          <div className="bg-gray-50 px-5 py-3">
+            <div className="flex justify-between items-center">
+              <LinkButton 
+                href="/admin/events" 
+                variant="primary" 
+                size="sm"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                }
+              >
+                Voir tous
+              </LinkButton>
+              <LinkButton 
+                href="/admin/events/new" 
+                variant="default" 
+                size="sm"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                }
+              >
+                Ajouter
+              </LinkButton>
             </div>
-          </Link>
+          </div>
+        </div>
 
-          <Link
-            href="/admin/events"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
-          >
-            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
+        {/* Section Utilisateurs */}
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Total Utilisateurs</dt>
+                  <dd className="text-lg font-medium text-gray-900">{stats.totalArtists}</dd>
+                </dl>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-gray-900">Gérer les événements</p>
-              <p className="text-sm text-gray-500">Voir la liste complète</p>
+          </div>
+          <div className="bg-gray-50 px-5 py-3">
+            <div className="flex justify-between items-center">
+              <LinkButton 
+                href="/admin/users" 
+                variant="primary" 
+                size="sm"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                }
+              >
+                Voir tous
+              </LinkButton>
+              <LinkButton 
+                href="/admin/users/new" 
+                variant="default" 
+                size="sm"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                }
+              >
+                Ajouter
+              </LinkButton>
             </div>
-          </Link>
+          </div>
         </div>
       </div>
     </div>
