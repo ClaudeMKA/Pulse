@@ -117,22 +117,6 @@ export default function AdminDashboard() {
     return <div>Chargement...</div>;
   }
 
-  const startScheduler = async () => {
-    try {
-      const response = await fetch('/api/cron/start-scheduler', {
-        method: 'POST',
-      });
-      
-      if (response.ok) {
-        alert('Planificateur de notifications démarré !');
-      } else {
-        alert('Erreur lors du démarrage du planificateur');
-      }
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors du démarrage du planificateur');
-    }
-  };
 
   return (
     <ProtectedRoute> 
@@ -147,190 +131,8 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-      {/* Statistiques principales */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Total Événements */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Événements</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.totalEvents}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Événements à venir */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">À venir</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.upcomingEvents}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Total Artistes */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Artistes</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.totalArtists}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Événements avec artistes */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Avec Artiste</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.eventsWithArtists}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-
-      {/* Contenu récent */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Événements récents */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-900">Événements récents</h3>
-              <Link
-                href="/admin/events"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Voir tout
-              </Link>
-            </div>
-          </div>
-          <div className="p-6">
-            {recentEvents.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">Aucun événement récent</p>
-            ) : (
-              <div className="space-y-4">
-                {recentEvents.map((event) => (
-                  <div key={event.id} className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {event.title}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(event.start_date).toLocaleDateString('fr-FR')} • {event.location || 'Lieu non spécifié'}
-                      </p>
-                    </div>
-                    <Link
-                      href={`/admin/events/${event.id}`}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      Voir
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Artistes récents */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-900">Artistes récents</h3>
-              <Link
-                href="/admin/artists"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Voir tout
-              </Link>
-            </div>
-          </div>
-          <div className="p-6">
-            {recentArtists.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">Aucun artiste récent</p>
-            ) : (
-              <div className="space-y-4">
-                {recentArtists.map((artist) => (
-                  <div key={artist.id} className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
-                      {artist.image_path ? (
-                        <img
-                          className="w-10 h-10 rounded-full object-cover"
-                          src={artist.image_path}
-                          alt={artist.name}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {artist.name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Ajouté le {new Date(artist.created_at).toLocaleDateString('fr-FR')}
-                      </p>
-                    </div>
-                    <Link
-                      href={`/admin/artists/${artist.id}`}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      Voir
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Actions rapides */}
-      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {/* Section Artistes */}
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
@@ -479,17 +281,116 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="mt-8">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Système de Notifications</h3>
-        <div className="flex space-x-4">
-          <button
-            onClick={startScheduler}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            🚀 Démarrer le Planificateur
-          </button>
+
+
+      {/* Contenu récent */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Événements récents */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Événements récents</h3>
+              <Link
+                href="/admin/events"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Voir tout
+              </Link>
+            </div>
+          </div>
+          <div className="p-6">
+            {recentEvents.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Aucun événement récent</p>
+            ) : (
+              <div className="space-y-4">
+                {recentEvents.map((event) => (
+                  <div key={event.id} className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {event.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(event.start_date).toLocaleDateString('fr-FR')} • {event.location || 'Lieu non spécifié'}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/admin/events/${event.id}`}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      Voir
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Artistes récents */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Artistes récents</h3>
+              <Link
+                href="/admin/artists"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Voir tout
+              </Link>
+            </div>
+          </div>
+          <div className="p-6">
+            {recentArtists.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Aucun artiste récent</p>
+            ) : (
+              <div className="space-y-4">
+                {recentArtists.map((artist) => (
+                  <div key={artist.id} className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      {artist.image_path ? (
+                        <img
+                          className="w-10 h-10 rounded-full object-cover"
+                          src={artist.image_path}
+                          alt={artist.name}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {artist.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Ajouté le {new Date(artist.created_at).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/admin/artists/${artist.id}`}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      Voir
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+
     </div>
     </ProtectedRoute>
   );

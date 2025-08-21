@@ -76,6 +76,11 @@ export default function AdminLayout({
         </svg>
       ),
     },
+    {
+      name: "Notifications",
+      href: "/admin/notifications",
+      icon: "🔔",
+    },
   ];
 
   const handleSignOut = () => {
