@@ -33,7 +33,6 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [artists, setArtists] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -53,17 +52,17 @@ export default function Home() {
         const { events: fetchedEvents } = await response.json();
         
         // Formater les dates et s'assurer que les artistes sont correctement définis
-        const formattedEvents = fetchedEvents.map((event: any) => ({
+        const formattedEvents = fetchedEvents.map((event: Event) => ({
           ...event,
-          start_date: new Date(event.start_date),
-          artist: event.artist || { id: 0, name: 'Artiste inconnu' }
+          start_date: new Date(event.start_date as string),
+          artist: event.artist || { id: 0, name: 'Artiste inconnu', image_path: null }
         }));
         
         setEvents(formattedEvents);
-        
+        console.log(formattedEvents);
         // Extraire les artistes uniques
         const uniqueArtists = new Set<string>();
-        formattedEvents.forEach(event => {
+        formattedEvents.forEach((event: Event) => {
           if (event.artist?.name) {
             uniqueArtists.add(event.artist.name);
           }
@@ -111,17 +110,17 @@ export default function Home() {
 
   // Trier les événements par date croissante
   const sortedEvents = [...events].sort(
-    (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    (a: Event, b: Event) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
   );
   
   const featuredEvent = sortedEvents[0];
   
   // Convertir les événements au format attendu par le composant Timeline
-  const timelineEvents: TimelineEvent[] = sortedEvents.map(event => ({
+  const timelineEvents = sortedEvents.map((event: Event) => ({
     id: event.id,
     title: event.title,
     desc: event.desc,
-    start_date: new Date(event.start_date),
+    start_date: new Date(event.start_date as string),
     genre: event.genre,
     type: event.type,
     location: event.location || 'Lieu non spécifié',
@@ -137,31 +136,20 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-white">
-      {featuredEvent && (
-        <Hero
-          featured={{
-            title: featuredEvent.title,
-            desc: featuredEvent.desc,
-            start_date: new Date(featuredEvent.start_date),
-            genre: featuredEvent.genre,
-            type: featuredEvent.type,
-            location: featuredEvent.location || 'Lieu non spécifié',
-            artist: { name: featuredEvent.artist?.name || 'Artiste inconnu' },
-            image_path: featuredEvent.image_path || '/assets/events/hero-bg.jpg'
-          }}
-          stats={{
-            artistsCount: artists.size,
-            eventsCount: events.length,
-            cities: Array.from(
-              new Set(
-                events
-                  .map(e => e.location?.split(',')[0]?.trim())
-                  .filter(Boolean)
-              )
-            ) as string[],
-          }}
-        />
-      )}
+      <Hero
+        stats={{
+          artistsCount: artists.size,
+          eventsCount: events.length,
+          cities: Array.from(
+            new Set(
+              events
+                .map(e => e.location?.split(',')[0]?.trim())
+                .filter(Boolean)
+            )
+          ) as string[],
+        }}
+        events={events}
+      />
 
       {/* ARTISTES */}
       {artistList.length > 0 && <ArtistsGrid artists={artistList} />}
