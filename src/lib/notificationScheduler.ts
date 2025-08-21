@@ -75,7 +75,7 @@ export class NotificationScheduler {
           });
 
           // Envoyer les emails avec plus de détails
-          const emailPromises = users.map(user =>
+          const emailPromises = users.map((user: { email: string }) =>
             sendEventReminder(
               user.email,
               notification.event.title,
