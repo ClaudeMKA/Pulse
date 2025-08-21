@@ -8,7 +8,7 @@ interface HeroProps {
   stats: {
     artistsCount: number;
     eventsCount: number;
-    cities: string[];
+    cities: string;
   };
   events: Array<{
     id: number;
@@ -86,7 +86,7 @@ export default function Hero({ stats, events }: HeroProps) {
             </span>
             {stats.cities.length > 0 && (
               <span className="px-4 py-2 rounded-full text-sm font-semibold text-white border border-white/30 bg-white/10">
-                {stats.cities.length} Villes
+                📍 {stats.cities}
               </span>
             )}
           </div>

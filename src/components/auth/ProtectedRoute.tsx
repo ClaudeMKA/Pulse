@@ -15,7 +15,6 @@ export default function ProtectedRoute({ children, requiredRole = "ADMIN" }: Pro
 
   useEffect(() => {
     if (status === "loading") return;
-    
     if (!session) {
       router.push("/auth/login");
       return;

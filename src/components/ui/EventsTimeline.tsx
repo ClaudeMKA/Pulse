@@ -2,12 +2,14 @@
 import Link from "next/link";
 import { COLORS } from "@/lib/theme";
 import { format } from "date-fns";
+import Image from "next/image";
 
 export type TimelineEvent = {
   id: number;
   title: string;
   desc: string;
   start_date: Date;
+  image_path: string;
   genre: string;
   type: string;
   location: string;
@@ -23,6 +25,7 @@ function formatDate(date: Date) {
 }
 
 export default function EventsTimeline({ events }: { events: TimelineEvent[] }) {
+  console.log(events)
   return (
     <section id="events" className="max-w-5xl mx-auto py-16 px-4">
       <h2 className="text-4xl font-bold mb-10 text-center font-display" style={{ color: COLORS.corail }}>
@@ -34,7 +37,8 @@ export default function EventsTimeline({ events }: { events: TimelineEvent[] }) 
             <div className="absolute -left-6 w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl shadow-lg border-4" style={{ background: COLORS.violet, color: '#fff', borderColor: COLORS.roseClair }}>
               {event.artist.name.charAt(0)}
             </div>
-            <div className="flex-1 bg-white rounded-2xl shadow-lg p-8 ml-6 border-2" style={{ borderColor: COLORS.lavande }}>
+            <div className="flex-1 bg-white rounded-2xl shadow-lg pl-[230px] p-8 ml-6 border-2 relative overflow-hidden" style={{ borderColor: COLORS.lavande }}>
+              <Image src={event.image_path} alt={event.title} width={200} height={500} className="h-full object-cover absolute top-0 left-0"/>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
                 <span className="text-lg font-semibold" style={{ color: COLORS.rose }}>{event.artist.name}</span>
                 <span className="text-sm font-medium px-3 py-1 rounded-full ml-2" style={{ background: COLORS.roseClair, color: COLORS.corail }}>{event.type}</span>

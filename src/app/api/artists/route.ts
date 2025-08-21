@@ -40,7 +40,6 @@ export async function GET() {
         created_at: "desc",
       },
     });
-
     return NextResponse.json(artists);
   } catch (error) {
     console.error("Erreur lors de la récupération des artistes:", error);
