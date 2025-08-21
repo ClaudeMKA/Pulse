@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { COLORS } from '@/lib/theme';
+import Header from '@/components/ui/header';
 import Hero from '@/components/ui/Hero';
 import ArtistsGrid from '@/components/ui/ArtistsGrid';
 import EventsTimeline from '@/components/ui/EventsTimeline';
 import FAQ from '@/components/ui/FAQ';
+import Footer from '@/components/ui/footer';
 
 type Event = {
   id: number;
@@ -136,6 +138,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-white">
+      <Header />
       <Hero
         stats={{
           artistsCount: artists.size,
@@ -161,11 +164,7 @@ export default function Home() {
       <FAQ items={faqItems} />
 
       {/* FOOTER */}
-      <footer className="w-full py-10 px-4 text-center" style={{ background: COLORS.violet }}>
-        <p className="text-white font-semibold text-lg">
-          &copy; {new Date().getFullYear()} Pulse Festival — Tous droits réservés.
-        </p>
-      </footer>
+      <Footer />
     </main>
   );
 }
