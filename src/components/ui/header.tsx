@@ -4,11 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
-  const { data: session } = useSession();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,60 +51,17 @@ export default function Header() {
           </Link>
         </nav>
 
-        {/* Auth & CTA */}
-        <div className="flex items-center gap-4">
-          {session ? (
-            <div className="flex items-center gap-4">
-              <Link
-                href="/my-events"
-                className={`px-3 py-1 rounded-lg transition ${
-                  scrolled ? "text-gray-800 hover:bg-gray-100" : "text-white hover:bg-white/20"
-                }`}
-              >
-                Mes événements
-              </Link>
-              {session.user.role === "ADMIN" && (
-                <Link
-                  href="/admin"
-                  className={`px-3 py-1 rounded-lg transition ${
-                    scrolled ? "text-gray-800 hover:bg-gray-100" : "text-white hover:bg-white/20"
-                  }`}
-                >
-                  Admin
-                </Link>
-              )}
-              <button
-                onClick={() => signOut()}
-                className={`px-3 py-1 rounded-lg transition ${
-                  scrolled ? "text-gray-800 hover:bg-gray-100" : "text-white hover:bg-white/20"
-                }`}
-              >
-                Déconnexion
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/login"
-                className={`px-3 py-1 rounded-lg transition ${
-                  scrolled ? "text-gray-800 hover:bg-gray-100" : "text-white hover:bg-white/20"
-                }`}
-              >
-                Se connecter
-              </Link>
-              <Link
-                href="/register"
-                className={`px-4 py-2 rounded-xl shadow transition ${
-                  scrolled
-                    ? "bg-violet-600 text-white hover:bg-violet-700"
-                    : "bg-white text-violet-600 hover:bg-gray-200"
-                }`}
-              >
-                S'inscrire
-              </Link>
-            </div>
-          )}
-        </div>
+        {/* CTA */}
+        <Link
+          href="/tickets"
+          className={`px-4 py-2 rounded-xl shadow transition ${
+            scrolled
+              ? "bg-violet-600 text-white hover:bg-violet-700"
+              : "bg-white text-violet-600 hover:bg-gray-200"
+          }`}
+        >
+          Billetterie
+        </Link>
       </div>
     </motion.header>
   );
