@@ -60,6 +60,17 @@ export class NotificationScheduler {
           event: {
             include: {
               artist: true,
+              participants: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      email: true,
+                      username: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -67,13 +78,29 @@ export class NotificationScheduler {
 
       for (const notification of notifications) {
         try {
-          // Récupérer tous les utilisateurs
-          const users = await prisma.users.findMany({
-            select: { email: true },
-          });
+          // Récupérer uniquement les participants inscrits à l'événement
+          const participants = notification.event.participants;
 
-          // TODO: Envoyer les emails (fonctionnalité désactivée temporairement)
-          console.log(`Notification prête à être envoyée à ${users.length} utilisateurs`);
+          if (participants.length === 0) {
+            console.log(`Aucun participant inscrit pour l'événement ${notification.event.title}`);
+          } else {
+            // Créer des notifications dans l'app pour chaque participant
+            await Promise.all(
+              participants.map(participant =>
+                prisma.notifications.create({
+                  data: {
+                    user_id: participant.user.id,
+                    title: notification.title,
+                    message: notification.message,
+                    type: "INFO",
+                  },
+                })
+              )
+            );
+
+            // TODO: Envoyer les emails (fonctionnalité désactivée temporairement)
+            console.log(`Notification envoyée à ${participants.length} participants de l'événement ${notification.event.title}`);
+          }
 
           // Marquer comme envoyée
           await prisma.eventNotifications.update({
@@ -84,7 +111,7 @@ export class NotificationScheduler {
             },
           });
 
-          console.log(`Notification ${notification.id} envoyée avec succès`);
+          console.log(`Notification ${notification.id} traitée avec succès`);
         } catch (error) {
           console.error(`Erreur lors de l'envoi de la notification ${notification.id}:`, error);
         }

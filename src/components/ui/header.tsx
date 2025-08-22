@@ -26,7 +26,7 @@ export default function Header() {
             <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors">
               Accueil
             </Link>
-            <Link href="/#events" className="text-gray-600 hover:text-gray-900 transition-colors">
+            <Link href="/events" className="text-gray-600 hover:text-gray-900 transition-colors">
               Événements
             </Link>
             <Link href="/#artists" className="text-gray-600 hover:text-gray-900 transition-colors">
@@ -79,7 +79,7 @@ export default function Header() {
                 Accueil
               </Link>
               <Link
-                href="/#events"
+                href="/events"
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 onClick={() => setIsMenuOpen(false)}
               >

@@ -4,10 +4,11 @@ import { requireAdminAuth } from "@/lib/api-auth";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id: paramId } = await params;
+    const id = parseInt(paramId);
 
     if (isNaN(id)) {
       return NextResponse.json(
@@ -24,6 +25,11 @@ export async function GET(
             id: true,
             name: true,
             image_path: true,
+          },
+        },
+        _count: {
+          select: {
+            participants: true,
           },
         },
       },
@@ -48,14 +54,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Vérifier l'authentification admin
   const { error, session } = await requireAdminAuth(request);
   if (error) return error;
 
   try {
-    const id = parseInt(params.id);
+    const { id: paramId } = await params;
+    const id = parseInt(paramId);
     const body = await request.json();
     const {
       title,
@@ -68,6 +75,8 @@ export async function PUT(
       longitude,
       image_path,
       artist_id,
+      price,
+      currency,
     } = body;
 
     if (isNaN(id)) {
@@ -157,26 +166,57 @@ export async function PUT(
       }
     }
 
+    // Validation du prix et de la devise
+    if (price !== undefined && (isNaN(Number(price)) || Number(price) < 0)) {
+      return NextResponse.json(
+        { message: "Le prix doit être un nombre positif" },
+        { status: 400 }
+      );
+    }
+
+    if (currency && !["EUR", "USD", "GBP"].includes(currency)) {
+      return NextResponse.json(
+        { message: "La devise doit être EUR, USD ou GBP" },
+        { status: 400 }
+      );
+    }
+
+    // Préparer les données de mise à jour
+    const updateData: any = {
+      title: title.trim(),
+      desc: desc.trim(),
+      start_date: eventDate,
+      genre: genre as "RAP" | "RNB" | "REGGAE" | "ROCK",
+      type: type as "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER",
+      location: location.trim(),
+      latitude: latitude !== null ? Number(latitude) : null,
+      longitude: longitude !== null ? Number(longitude) : null,
+      image_path: image_path?.trim() || null,
+      price: price !== undefined ? Number(price) : 0,
+      currency: currency || "EUR",
+    };
+
+    // Gérer la relation artist
+    if (artist_id === null || artist_id === "") {
+      updateData.artist = { disconnect: true };
+    } else if (artist_id) {
+      updateData.artist = { connect: { id: Number(artist_id) } };
+    }
+
     const updatedEvent = await prisma.events.update({
       where: { id },
-      data: {
-        title: title.trim(),
-        desc: desc.trim(),
-        start_date: eventDate,
-        genre: genre as "RAP" | "RNB" | "REGGAE" | "ROCK",
-        type: type as "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER",
-        location: location.trim(),
-        latitude: latitude !== null ? Number(latitude) : null,
-        longitude: longitude !== null ? Number(longitude) : null,
-        image_path: image_path?.trim() || null,
-        artist_id: artist_id !== null ? Number(artist_id) : null,
-      },
+      data: updateData,
       include: {
         artist: {
           select: {
             id: true,
             name: true,
             image_path: true,
+          },
+        },
+        _count: {
+          select: {
+            participants: true,
           },
         },
       },
@@ -194,14 +234,15 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Vérifier l'authentification admin
   const { error, session } = await requireAdminAuth(request);
   if (error) return error;
 
   try {
-    const id = parseInt(params.id);
+    const { id: paramId } = await params;
+    const id = parseInt(paramId);
 
     if (isNaN(id)) {
       return NextResponse.json(

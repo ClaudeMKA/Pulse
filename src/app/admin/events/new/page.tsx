@@ -19,6 +19,8 @@ interface EventFormData {
   longitude: string;
   image_path: string;
   artist_id: string;
+  price: string;
+  currency: string;
 }
 
 export default function CreateEventPage() {
@@ -35,6 +37,8 @@ export default function CreateEventPage() {
     longitude: "",
     image_path: "",
     artist_id: "",
+    price: "0",
+    currency: "EUR",
   });
   const [artists, setArtists] = useState<Artist[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -149,6 +153,10 @@ export default function CreateEventPage() {
       newErrors.longitude = "La longitude doit être entre -180 et 180";
     }
 
+    if (isNaN(Number(formData.price)) || Number(formData.price) < 0) {
+      newErrors.price = "Le prix doit être un nombre positif";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -169,6 +177,7 @@ export default function CreateEventPage() {
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
         artist_id: formData.artist_id ? parseInt(formData.artist_id) : null,
+        price: parseFloat(formData.price),
       };
 
       const response = await fetch("/api/events", {
@@ -412,6 +421,53 @@ export default function CreateEventPage() {
             <p className="mt-1 text-sm text-gray-500">
               Laissez vide si l'événement n'est pas lié à un artiste spécifique
             </p>
+          </div>
+
+          {/* Prix et devise */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
+                Prix de l'événement *
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.price ? "border-red-300" : "border-gray-300"
+                  }`}
+                  placeholder="0.00"
+                />
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Mettez 0 pour un événement gratuit
+              </p>
+              {errors.price && (
+                <p className="mt-1 text-sm text-red-600">{errors.price}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">
+                Devise *
+              </label>
+              <select
+                id="currency"
+                name="currency"
+                value={formData.currency}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="EUR">EUR (€)</option>
+                <option value="USD">USD ($)</option>
+                <option value="GBP">GBP (£)</option>
+              </select>
+            </div>
           </div>
 
           {/* Upload d'image */}

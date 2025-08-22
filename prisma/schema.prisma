@@ -22,6 +22,7 @@ model Users {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
   notifications Notifications[]
+  participations EventParticipants[]
 
   @@map("users")
 }
@@ -50,12 +51,15 @@ model Events {
   latitude    Float?
   longitude   Float?
   image_path  String?
+  price       Float    @default(0)
+  currency    String   @default("EUR")
   artist_id   Int?
   artist      Artists? @relation(fields: [artist_id], references: [id])
   stands      Stands[]
   notifications EventNotifications[]
+  participants EventParticipants[]
   created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  updated_at  DateTime @updatedAt @default(now())
 
   @@map("events")
 }
@@ -79,9 +83,9 @@ model Stands {
   description String?
   capacity    Int?
   price       Float?
-  type        StandType
-  opened_at   DateTime
-  closed_at   DateTime
+  type        StandType @default(FOOD)
+  opened_at   DateTime @default(now())
+  closed_at   DateTime @default(now())
   image_path  String?
   location    String?
   event_id    Int?
@@ -109,7 +113,7 @@ enum Genre {
 
 enum EventType {
   CONCERT
-  ACCOUSTIQUE
+  FESTIVAL
   SHOWCASE
   OTHER
 }
@@ -147,6 +151,21 @@ model EventNotifications {
   @@map("event_notifications")
 }
 
+model EventParticipants {
+  id               Int            @id @default(autoincrement())
+  user_id          Int
+  event_id         Int
+  user             Users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  event            Events         @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  payment_status   PaymentStatus  @default(PENDING)
+  payment_intent_id String?
+  amount_paid      Float?
+  created_at       DateTime       @default(now())
+  
+  @@unique([user_id, event_id])
+  @@map("event_participants")
+}
+
 enum NotificationType {
   INFO
   WARNING
@@ -157,5 +176,12 @@ enum NotificationType {
 enum ReminderType {
   ONE_HOUR_BEFORE
   TEN_MINUTES_BEFORE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
 }
 

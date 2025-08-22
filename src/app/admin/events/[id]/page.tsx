@@ -23,6 +23,11 @@ interface Event {
   image_path: string | null;
   artist_id: number | null;
   artist: Artist | null;
+  price: number;
+  currency: string;
+  _count?: {
+    participants: number;
+  };
 }
 
 interface EventFormData {
@@ -36,6 +41,8 @@ interface EventFormData {
   longitude: string;
   image_path: string;
   artist_id: string;
+  price: string;
+  currency: string;
 }
 
 const genreLabels = {
@@ -72,6 +79,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     longitude: "",
     image_path: "",
     artist_id: "",
+    price: "0",
+    currency: "EUR",
   });
   const [errors, setErrors] = useState<Partial<EventFormData>>({});
   const [previewImage, setPreviewImage] = useState<string>("");
@@ -98,6 +107,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           longitude: eventData.longitude?.toString() || "",
           image_path: eventData.image_path || "",
           artist_id: eventData.artist_id?.toString() || "",
+          price: eventData.price?.toString() || "0",
+          currency: eventData.currency || "EUR",
         });
         setPreviewImage(eventData.image_path || "");
       } else {
@@ -210,6 +221,10 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       newErrors.longitude = "La longitude doit être entre -180 et 180";
     }
 
+    if (isNaN(Number(formData.price)) || Number(formData.price) < 0) {
+      newErrors.price = "Le prix doit être un nombre positif";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -228,6 +243,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
         artist_id: formData.artist_id ? parseInt(formData.artist_id) : null,
+        price: parseFloat(formData.price),
+        currency: formData.currency,
       };
 
       const response = await fetch(`/api/events/${params.id}`, {
@@ -538,6 +555,51 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </select>
             </div>
 
+            {/* Prix et devise */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
+                  Prix de l'événement *
+                </label>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.price ? "border-red-300" : "border-gray-300"
+                  }`}
+                  placeholder="0.00"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Mettez 0 pour un événement gratuit
+                </p>
+                {errors.price && (
+                  <p className="mt-1 text-sm text-red-600">{errors.price}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">
+                  Devise *
+                </label>
+                <select
+                  id="currency"
+                  name="currency"
+                  value={formData.currency}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="EUR">EUR (€)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="GBP">GBP (£)</option>
+                </select>
+              </div>
+            </div>
+
             {/* Upload d'image */}
             <div>
               <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
@@ -673,6 +735,22 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               )}
             </div>
 
+            {/* Prix et devise */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Prix</h3>
+              <div className="flex items-center space-x-2">
+                {event.price === 0 ? (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Gratuit
+                  </span>
+                ) : (
+                  <span className="text-gray-700 font-medium">
+                    {event.price} {event.currency}
+                  </span>
+                )}
+              </div>
+            </div>
+
             {/* Artiste associé */}
             {event.artist && (
               <div>
@@ -694,6 +772,37 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 </div>
               </div>
             )}
+
+            {/* Participants */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Participants</h3>
+              <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {event._count?.participants || 0} participant{(event._count?.participants || 0) !== 1 ? 's' : ''} inscrit{(event._count?.participants || 0) !== 1 ? 's' : ''}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Gérez les inscriptions à cet événement
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={`/admin/events/${event.id}/participants`}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  Voir les participants
+                </Link>
+              </div>
+            </div>
 
             {/* Boutons d'action */}
             <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">

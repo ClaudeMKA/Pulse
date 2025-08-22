@@ -21,6 +21,8 @@ export async function POST(request: NextRequest) {
       longitude,
       image_path,
       artist_id,
+      price,
+      currency,
     } = body;
 
     // Validation côté serveur
@@ -104,21 +106,54 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validation du prix et de la devise
+    if (price !== undefined && (isNaN(Number(price)) || Number(price) < 0)) {
+      return NextResponse.json(
+        { message: "Le prix doit être un nombre positif" },
+        { status: 400 }
+      );
+    }
+
+    if (currency && !["EUR", "USD", "GBP"].includes(currency)) {
+      return NextResponse.json(
+        { message: "La devise doit être EUR, USD ou GBP" },
+        { status: 400 }
+      );
+    }
+
     // Créer l'événement
+    const eventData: any = {
+      title: title.trim(),
+      desc: desc.trim(),
+      start_date: eventDate,
+      genre: genre as "RAP" | "RNB" | "REGGAE" | "ROCK",
+      type: type as "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER",
+      location: location.trim(),
+      latitude: latitude !== null ? Number(latitude) : null,
+      longitude: longitude !== null ? Number(longitude) : null,
+      image_path: image_path?.trim() || null,
+      price: price !== undefined ? Number(price) : 0,
+      currency: currency || "EUR",
+    };
+
+    // Ajouter la relation artist si fournie
+    if (artist_id && artist_id !== null) {
+      eventData.artist = {
+        connect: { id: Number(artist_id) }
+      };
+    }
+
     const event = await prisma.events.create({
-      data: {
-        title: title.trim(),
-        desc: desc.trim(),
-        start_date: eventDate,
-        genre: genre as "RAP" | "RNB" | "REGGAE" | "ROCK",
-        type: type as "CONCERT" | "ACCOUSTIQUE" | "SHOWCASE" | "OTHER",
-        location: location.trim(),
-        latitude: latitude !== null ? Number(latitude) : null,
-        longitude: longitude !== null ? Number(longitude) : null,
-        image_path: image_path?.trim() || null,
-        artist_id: artist_id !== null ? Number(artist_id) : null,
+      data: eventData,
+      include: {
+        artist: {
+          select: {
+            id: true,
+            name: true,
+            image_path: true,
+          },
+        },
       },
-      // Supprimer l'include pour l'instant
     });
 
     // Planifier les notifications automatiquement
