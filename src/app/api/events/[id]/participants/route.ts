@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 // Obtenir la liste des participants d'un événement (admin seulement)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,7 +18,8 @@ export async function GET(
       );
     }
 
-    const eventId = parseInt(params.id);
+    const { id: paramId } = await params;
+    const eventId = parseInt(paramId);
 
     if (isNaN(eventId)) {
       return NextResponse.json(
