@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
+import { requireAdminAuth } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
+  // Vérifier l'authentification admin
+  const { error, session } = await requireAdminAuth(request);
+  if (error) return error;
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
