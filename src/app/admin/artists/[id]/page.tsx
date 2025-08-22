@@ -204,9 +204,9 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <p className="text-2xl font-bold text-gray-900 mb-4">
             Artiste non trouvé
-          </h1>
+          </p>
           <Link
             href="/admin/artists"
             className="text-blue-600 hover:text-blue-800 underline"
@@ -224,9 +224,9 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <p className="text-3xl font-bold text-gray-900 mb-2">
               {isEditing ? "Modifier l'artiste" : artist.name}
-            </h1>
+            </p>
             <p className="text-gray-600">
               {isEditing 
                 ? "Modifiez les informations de l'artiste"
@@ -383,12 +383,12 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
             {/* Informations */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nom</h3>
+                <p className="text-lg font-medium text-gray-900 mb-2">Nom</p>
                 <p className="text-gray-700">{artist.name}</p>
               </div>
               
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Date de création</h3>
+                <p className="text-lg font-medium text-gray-900 mb-2">Date de création</p>
                 <p className="text-gray-700">
                   {new Date(artist.created_at).toLocaleDateString('fr-FR', {
                     year: 'numeric',
@@ -404,14 +404,14 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
             {/* Description */}
             {artist.desc && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Description</h3>
+                <p className="text-lg font-medium text-gray-900 mb-2">Description</p>
                 <p className="text-gray-700 whitespace-pre-wrap">{artist.desc}</p>
               </div>
             )}
 
             {/* Dernière modification */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Dernière modification</h3>
+              <p className="text-lg font-medium text-gray-900 mb-2">Dernière modification</p>
               <p className="text-gray-700">
                 {new Date(artist.updated_at).toLocaleDateString('fr-FR', {
                   year: 'numeric',

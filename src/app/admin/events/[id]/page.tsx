@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
 interface Artist {
@@ -10,18 +10,27 @@ interface Artist {
   image_path: string | null;
 }
 
+interface Location {
+  id: number;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 interface Event {
   id: number;
   title: string;
   desc: string;
   start_date: string;
   genre: "RAP" | "RNB" | "REGGAE" | "ROCK";
-  type: "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER";
+  type: "CONCERT" | "ACCOUSTIQUE" | "SHOWCASE" | "OTHER";
   location: string | null;
   latitude: number | null;
   longitude: number | null;
   image_path: string | null;
   artist_id: number | null;
+  location_id: number | null;
   artist: Artist | null;
 }
 
@@ -30,10 +39,8 @@ interface EventFormData {
   desc: string;
   start_date: string;
   genre: "RAP" | "RNB" | "REGGAE" | "ROCK";
-  type: "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER";
-  location: string;
-  latitude: string;
-  longitude: string;
+  type: "CONCERT" | "ACCOUSTIQUE" | "SHOWCASE" | "OTHER";
+  location_id: string;
   image_path: string;
   artist_id: string;
 }
@@ -47,16 +54,18 @@ const genreLabels = {
 
 const typeLabels = {
   CONCERT: "Concert",
-  FESTIVAL: "Festival",
+  ACCOUSTIQUE: "Accoustique",
   SHOWCASE: "Showcase",
   OTHER: "Autre",
 };
 
-export default function EventDetailPage({ params }: { params: { id: string } }) {
+export default function EventDetailPage() {
   const router = useRouter();
+  const params = useParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [event, setEvent] = useState<Event | null>(null);
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -67,18 +76,20 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     start_date: "",
     genre: "RAP",
     type: "CONCERT",
-    location: "",
-    latitude: "",
-    longitude: "",
+    location_id: "",
     image_path: "",
     artist_id: "",
   });
   const [errors, setErrors] = useState<Partial<EventFormData>>({});
+  const [generalError, setGeneralError] = useState<string>("");
   const [previewImage, setPreviewImage] = useState<string>("");
 
   useEffect(() => {
-    fetchEvent();
-    fetchArtists();
+    if (params.id) {
+      fetchEvent();
+      fetchArtists();
+      fetchLocations();
+    }
   }, [params.id]);
 
   const fetchEvent = async () => {
@@ -93,9 +104,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           start_date: new Date(eventData.start_date).toISOString().slice(0, 16),
           genre: eventData.genre,
           type: eventData.type,
-          location: eventData.location || "",
-          latitude: eventData.latitude?.toString() || "",
-          longitude: eventData.longitude?.toString() || "",
+          location_id: eventData.location_id?.toString() || "",
           image_path: eventData.image_path || "",
           artist_id: eventData.artist_id?.toString() || "",
         });
@@ -109,6 +118,27 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchLocations = async () => {
+    try {
+      const response = await fetch("/api/locations");
+      if (response.ok) {
+        const data = await response.json();
+        // L'API retourne { locations: [...], pagination: {...} }
+        setLocations(data.locations || data);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des lieux:", error);
+    }
+  };
+
+  const getLocationDisplayName = (locationId: number | null) => {
+    if (!locationId) return "Non spécifié";
+    if (!Array.isArray(locations)) return "Chargement des lieux...";
+    const location = locations.find(loc => loc.id === locationId);
+    if (!location) return "Lieu inconnu";
+    return location.address ? `${location.name} - ${location.address}` : location.name;
   };
 
   const fetchArtists = async () => {
@@ -198,16 +228,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       newErrors.start_date = "La date de début doit être dans le futur";
     }
 
-    if (!formData.location.trim()) {
-      newErrors.location = "Le lieu est requis";
-    }
-
-    if (formData.latitude && (isNaN(Number(formData.latitude)) || Number(formData.latitude) < -90 || Number(formData.latitude) > 90)) {
-      newErrors.latitude = "La latitude doit être entre -90 et 90";
-    }
-
-    if (formData.longitude && (isNaN(Number(formData.longitude)) || Number(formData.longitude) < -180 || Number(formData.longitude) > 180)) {
-      newErrors.longitude = "La longitude doit être entre -180 et 180";
+    if (!formData.location_id) {
+      newErrors.location_id = "Le lieu est requis";
     }
 
     setErrors(newErrors);
@@ -215,6 +237,10 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   };
 
   const handleSave = async () => {
+    // Effacer les erreurs précédentes
+    setErrors({});
+    setGeneralError("");
+    
     if (!validateForm()) {
       return;
     }
@@ -225,8 +251,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       const eventData = {
         ...formData,
         start_date: new Date(formData.start_date).toISOString(),
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        location_id: formData.location_id ? parseInt(formData.location_id) : null,
         artist_id: formData.artist_id ? parseInt(formData.artist_id) : null,
       };
 
@@ -245,7 +270,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         alert("Événement mis à jour avec succès !");
       } else {
         const error = await response.json();
-        alert(`Erreur: ${error.message}`);
+        // Afficher l'erreur dans l'interface au lieu d'un alert
+        setGeneralError(error.message);
       }
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
@@ -351,6 +377,26 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         {isEditing ? (
           /* Mode édition */
           <div className="space-y-6">
+            {/* Affichage des erreurs générales */}
+            {generalError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">
+                      Impossible de modifier l'événement
+                    </h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      {generalError}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Titre */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
@@ -443,7 +489,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="CONCERT">Concert</option>
-                  <option value="FESTIVAL">Festival</option>
+                  <option value="ACCOUSTIQUE">Accoustique</option>
                   <option value="SHOWCASE">Showcase</option>
                   <option value="OTHER">Autre</option>
                 </select>
@@ -452,68 +498,35 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
 
             {/* Lieu */}
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="location_id" className="block text-sm font-medium text-gray-700 mb-2">
                 Lieu *
               </label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                value={formData.location}
+              <select
+                id="location_id"
+                name="location_id"
+                value={formData.location_id}
                 onChange={handleInputChange}
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.location ? "border-red-300" : "border-gray-300"
+                  errors.location_id ? "border-red-300" : "border-gray-300"
                 }`}
-              />
-              {errors.location && (
-                <p className="mt-1 text-sm text-red-600">{errors.location}</p>
+              >
+                <option value="">Sélectionner un lieu</option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name} {location.address ? `- ${location.address}` : ""}
+                  </option>
+                ))}
+              </select>
+              {errors.location_id && (
+                <p className="mt-1 text-sm text-red-600">{errors.location_id}</p>
               )}
-            </div>
-
-            {/* Coordonnées GPS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="latitude" className="block text-sm font-medium text-gray-700 mb-2">
-                  Latitude (optionnel)
-                </label>
-                <input
-                  type="number"
-                  id="latitude"
-                  name="latitude"
-                  value={formData.latitude}
-                  onChange={handleInputChange}
-                  step="any"
-                  min="-90"
-                  max="90"
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.latitude ? "border-red-300" : "border-gray-300"
-                  }`}
-                />
-                {errors.latitude && (
-                  <p className="mt-1 text-sm text-red-600">{errors.latitude}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="longitude" className="block text-sm font-medium text-gray-700 mb-2">
-                  Longitude (optionnel)
-                </label>
-                <input
-                  type="number"
-                  id="longitude"
-                  name="longitude"
-                  value={formData.longitude}
-                  onChange={handleInputChange}
-                  step="any"
-                  min="-180"
-                  max="180"
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.longitude ? "border-red-300" : "border-gray-300"
-                  }`}
-                />
-                {errors.longitude && (
-                  <p className="mt-1 text-sm text-red-600">{errors.longitude}</p>
-                )}
+              <div className="mt-2">
+                <Link
+                  href="/admin/locations/new"
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  Créer un nouveau lieu
+                </Link>
               </div>
             </div>
 
@@ -618,26 +631,26 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             {/* Informations principales */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Titre</h3>
+                <p className="text-lg font-medium text-gray-900 mb-2">Titre</p>
                 <p className="text-gray-700">{event.title}</p>
               </div>
               
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Genre</h3>
+                <p className="text-lg font-medium text-gray-900 mb-2">Genre</p>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {genreLabels[event.genre]}
                 </span>
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Type</h3>
+                <p className="text-lg font-medium text-gray-900 mb-2">Type</p>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                   {typeLabels[event.type]}
                 </span>
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Date de début</h3>
+                <p className="text-lg font-medium text-gray-900 mb-2">Date de début</p>
                 <p className="text-gray-700">
                   {new Date(event.start_date).toLocaleDateString('fr-FR', {
                     year: 'numeric',
@@ -652,20 +665,20 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
 
             {/* Description */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Description</h3>
+              <p className="text-lg font-medium text-gray-900 mb-2">Description</p>
               <p className="text-gray-700 whitespace-pre-wrap">{event.desc}</p>
             </div>
 
             {/* Lieu et coordonnées */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Lieu</h3>
-                <p className="text-gray-700">{event.location || "Non spécifié"}</p>
+                <p className="text-lg font-medium text-gray-900 mb-2">Lieu</p>
+                <p className="text-gray-700">{getLocationDisplayName(event.location_id)}</p>
               </div>
 
               {(event.latitude && event.longitude) && (
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Coordonnées GPS</h3>
+                  <p className="text-lg font-medium text-gray-900 mb-2">Coordonnées GPS</p>
                   <p className="text-gray-700">
                     {event.latitude}, {event.longitude}
                   </p>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 interface SidebarItem {
   name: string;
@@ -64,6 +65,16 @@ export default function AdminLayout({
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      ),
+    },
+    {
+      name: "Lieux",
+      href: "/admin/locations",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       ),
     },
@@ -146,10 +157,14 @@ export default function AdminLayout({
       >
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <div className="w-8 h-8 flex items-center justify-center">
+              <Image
+                src="/assets/logo-pulse.svg"
+                alt="Pulse Logo"
+                width={32}
+                height={32}
+                className="w-8 h-8"
+              />
             </div>
             <p className="ml-3 text-lg font-semibold text-gray-900">Pulse Admin</p>
           </div>
@@ -231,7 +246,16 @@ export default function AdminLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <h1 className="text-lg font-semibold text-gray-900">Pulse Admin</h1>
+            <div className="flex items-center">
+              <Image
+                src="/assets/logo-pulse.svg"
+                alt="Pulse Logo"
+                width={24}
+                height={24}
+                className="w-6 h-6 mr-2"
+              />
+              <h1 className="text-lg font-semibold text-gray-900">Pulse Admin</h1>
+            </div>
             <button
               onClick={handleSignOut}
               className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md"

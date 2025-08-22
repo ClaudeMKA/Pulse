@@ -4,10 +4,11 @@ import { requireAdminAuth } from "@/lib/api-auth";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
 
     if (isNaN(id)) {
       return NextResponse.json(
@@ -29,6 +30,21 @@ export async function GET(
       },
     });
 
+    // Récupérer les détails de la location séparément
+    let locationDetails = null;
+    if ((event as any)?.location_id) {
+      locationDetails = await (prisma as any).locations.findUnique({
+        where: { id: (event as any).location_id },
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+        },
+      });
+    }
+
     if (!event) {
       return NextResponse.json(
         { message: "Événement non trouvé" },
@@ -36,7 +52,16 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(event);
+    // Transformer l'événement pour inclure latitude et longitude au niveau racine
+    const transformedEvent = {
+      ...event,
+      latitude: locationDetails?.latitude || null,
+      longitude: locationDetails?.longitude || null,
+      location: locationDetails?.name || null,
+      location_address: locationDetails?.address || null,
+    };
+
+    return NextResponse.json(transformedEvent);
   } catch (error) {
     console.error("Erreur lors de la récupération de l'événement:", error);
     return NextResponse.json(
@@ -48,14 +73,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Vérifier l'authentification admin
   const { error, session } = await requireAdminAuth(request);
   if (error) return error;
 
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     const body = await request.json();
     const {
       title,
@@ -63,9 +89,7 @@ export async function PUT(
       start_date,
       genre,
       type,
-      location,
-      latitude,
-      longitude,
+      location_id,
       image_path,
       artist_id,
     } = body;
@@ -106,16 +130,16 @@ export async function PUT(
       );
     }
 
-    if (!type || !["CONCERT", "FESTIVAL", "SHOWCASE", "OTHER"].includes(type)) {
+    if (!type || !["CONCERT", "ACCOUSTIQUE", "SHOWCASE", "OTHER"].includes(type)) {
       return NextResponse.json(
         { message: "Le type d'événement est requis et doit être valide" },
         { status: 400 }
       );
     }
 
-    if (!location || typeof location !== "string" || location.trim().length === 0) {
+    if (!location_id || typeof location_id !== "number") {
       return NextResponse.json(
-        { message: "Le lieu est requis" },
+        { message: "Le lieu est requis et doit être valide" },
         { status: 400 }
       );
     }
@@ -129,17 +153,13 @@ export async function PUT(
       );
     }
 
-    // Validation des coordonnées GPS
-    if (latitude !== null && (isNaN(Number(latitude)) || Number(latitude) < -90 || Number(latitude) > 90)) {
+    // Validation du lieu
+    const location = await (prisma as any).locations.findUnique({
+      where: { id: location_id },
+    });
+    if (!location) {
       return NextResponse.json(
-        { message: "La latitude doit être entre -90 et 90" },
-        { status: 400 }
-      );
-    }
-
-    if (longitude !== null && (isNaN(Number(longitude)) || Number(longitude) < -180 || Number(longitude) > 180)) {
-      return NextResponse.json(
-        { message: "La longitude doit être entre -180 et 180" },
+        { message: "Le lieu sélectionné n'existe pas" },
         { status: 400 }
       );
     }
@@ -155,19 +175,46 @@ export async function PUT(
           { status: 400 }
         );
       }
+
+      // Vérifier que l'artiste n'est pas déjà programmé sur la même journée (en excluant l'événement actuel)
+      const startOfDay = new Date(eventDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(eventDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existingEvent = await prisma.events.findFirst({
+        where: {
+          artist_id: Number(artist_id),
+          start_date: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+          id: {
+            not: id, // Exclure l'événement actuel
+          },
+        },
+      });
+
+      if (existingEvent) {
+        return NextResponse.json(
+          { 
+            message: `L'artiste ${artist.name} est déjà programmé le ${startOfDay.toLocaleDateString('fr-FR')} pour l'événement "${existingEvent.title}"` 
+          },
+          { status: 400 }
+        );
+      }
     }
 
-    const updatedEvent = await prisma.events.update({
+    const updatedEvent = await (prisma as any).events.update({
       where: { id },
       data: {
         title: title.trim(),
         desc: desc.trim(),
         start_date: eventDate,
         genre: genre as "RAP" | "RNB" | "REGGAE" | "ROCK",
-        type: type as "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER",
-        location: location.trim(),
-        latitude: latitude !== null ? Number(latitude) : null,
-        longitude: longitude !== null ? Number(longitude) : null,
+        type: type as "CONCERT" | "ACCOUSTIQUE" | "SHOWCASE" | "OTHER",
+        location_id: location_id,
         image_path: image_path?.trim() || null,
         artist_id: artist_id !== null ? Number(artist_id) : null,
       },
@@ -182,7 +229,31 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(updatedEvent);
+    // Récupérer les détails de la location séparément
+    let locationDetails = null;
+    if (location_id) {
+      locationDetails = await (prisma as any).locations.findUnique({
+        where: { id: location_id },
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+        },
+      });
+    }
+
+    // Transformer l'événement pour inclure latitude et longitude au niveau racine
+    const transformedEvent = {
+      ...updatedEvent,
+      latitude: locationDetails?.latitude || null,
+      longitude: locationDetails?.longitude || null,
+      location: locationDetails?.name || null,
+      location_address: locationDetails?.address || null,
+    };
+
+    return NextResponse.json(transformedEvent);
   } catch (error) {
     console.error("Erreur lors de la mise à jour de l'événement:", error);
     return NextResponse.json(
@@ -194,14 +265,15 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Vérifier l'authentification admin
   const { error, session } = await requireAdminAuth(request);
   if (error) return error;
 
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
 
     if (isNaN(id)) {
       return NextResponse.json(

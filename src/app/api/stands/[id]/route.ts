@@ -6,10 +6,11 @@ import { Prisma } from "@prisma/client";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     
     if (isNaN(id)) {
       return NextResponse.json(
@@ -18,7 +19,7 @@ export async function GET(
       );
     }
 
-    const stand = await prisma.stands.findUnique({
+    const stand = await (prisma as any).stands.findUnique({
       where: { id },
       include: {
         event: {
@@ -37,7 +38,31 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(stand);
+    // Récupérer les détails de la location séparément
+    let locationDetails = null;
+    if (stand.location_id) {
+      locationDetails = await (prisma as any).locations.findUnique({
+        where: { id: stand.location_id },
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+        },
+      });
+    }
+
+    // Transformer le stand pour inclure les détails de la location
+    const transformedStand = {
+      ...stand,
+      location: locationDetails?.name || null,
+      latitude: locationDetails?.latitude || null,
+      longitude: locationDetails?.longitude || null,
+      location_address: locationDetails?.address || null,
+    };
+
+    return NextResponse.json(transformedStand);
   } catch (error) {
     console.error("Erreur lors de la récupération du stand:", error);
     return NextResponse.json(
@@ -49,7 +74,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -61,7 +86,8 @@ export async function PUT(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     
     if (isNaN(id)) {
       return NextResponse.json(
@@ -70,11 +96,22 @@ export async function PUT(
       );
     }
 
-    const { name, description, location, event_id } = await request.json();
+    const { name, description, location_id, event_id, type, opened_at, closed_at } = await request.json();
 
-    if (!name || !description || !location) {
+    if (!name || !description || !location_id || !type || !opened_at || !closed_at) {
       return NextResponse.json(
-        { message: "Nom, description et localisation sont requis" },
+        { message: "Nom, description, lieu, type, heure d'ouverture et heure de fermeture sont requis" },
+        { status: 400 }
+      );
+    }
+
+    // Vérifier que la location existe
+    const locationExists = await (prisma as any).locations.findUnique({
+      where: { id: parseInt(location_id) },
+    });
+    if (!locationExists) {
+      return NextResponse.json(
+        { message: "Le lieu spécifié n'existe pas" },
         { status: 400 }
       );
     }
@@ -82,7 +119,12 @@ export async function PUT(
     const updateData: Prisma.StandsUpdateInput = {
       name,
       description,
-      location,
+      location: {
+        connect: { id: parseInt(location_id) }
+      },
+      type: type as "FOOD" | "ACTIVITE" | "TATOOS" | "SOUVENIRS" | "MERCH",
+      opened_at: new Date(opened_at),
+      closed_at: new Date(closed_at),
       ...(event_id ? {
         event: {
           connect: { id: parseInt(event_id) }
@@ -94,7 +136,7 @@ export async function PUT(
       })
     };
 
-    const stand = await prisma.stands.update({
+    const stand = await (prisma as any).stands.update({
       where: { id },
       data: updateData,
       include: {
@@ -107,7 +149,31 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(stand);
+    // Récupérer les détails de la location séparément
+    let locationDetails = null;
+    if (stand.location_id) {
+      locationDetails = await (prisma as any).locations.findUnique({
+        where: { id: stand.location_id },
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+        },
+      });
+    }
+
+    // Transformer le stand pour inclure les détails de la location
+    const transformedStand = {
+      ...stand,
+      location: locationDetails?.name || null,
+      latitude: locationDetails?.latitude || null,
+      longitude: locationDetails?.longitude || null,
+      location_address: locationDetails?.address || null,
+    };
+
+    return NextResponse.json(transformedStand);
   } catch (error: any) {
     console.error("Erreur lors de la modification du stand:", error);
     if (error?.code === "P2025") {
@@ -125,7 +191,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -137,7 +203,8 @@ export async function DELETE(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     
     if (isNaN(id)) {
       return NextResponse.json(

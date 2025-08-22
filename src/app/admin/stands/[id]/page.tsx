@@ -8,7 +8,10 @@ interface Stand {
   id: number;
   name: string;
   description: string;
-  location: string;
+  location: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_address: string | null;
   event_id: number | null;
   event?: {
     id: number;
@@ -159,7 +162,15 @@ export default function StandDetailsPage() {
               
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Localisation</h3>
-                <p className="text-gray-900">{stand.location}</p>
+                <p className="text-gray-900">{stand.location || "Non spécifié"}</p>
+                {stand.location_address && (
+                  <p className="text-gray-600 text-sm mt-1">{stand.location_address}</p>
+                )}
+                {(stand.latitude && stand.longitude) && (
+                  <p className="text-gray-600 text-sm mt-1">
+                    Coordonnées GPS: {stand.latitude}, {stand.longitude}
+                  </p>
+                )}
               </div>
               
               <div>

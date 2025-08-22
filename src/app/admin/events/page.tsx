@@ -16,7 +16,7 @@ interface Event {
   desc: string;
   start_date: string;
   genre: "RAP" | "RNB" | "REGGAE" | "ROCK";
-  type: "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER";
+  type: "CONCERT" | "ACCOUSTIQUE" | "SHOWCASE" | "OTHER";
   location: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -34,7 +34,7 @@ const genreLabels = {
 
 const typeLabels = {
   CONCERT: "Concert",
-  FESTIVAL: "Festival",
+  ACCOUSTIQUE: "Acoustique",
   SHOWCASE: "Showcase",
   OTHER: "Autre",
 };
@@ -48,7 +48,7 @@ const genreColors = {
 
 const typeColors = {
   CONCERT: "bg-indigo-100 text-indigo-800",
-  FESTIVAL: "bg-yellow-100 text-yellow-800",
+  ACCOUSTIQUE: "bg-yellow-100 text-yellow-800",
   SHOWCASE: "bg-pink-100 text-pink-800",
   OTHER: "bg-gray-100 text-gray-800",
 };
@@ -240,7 +240,7 @@ export default function EventsListPage() {
             >
               <option value="">Tous les types</option>
               <option value="CONCERT">Concert</option>
-              <option value="FESTIVAL">Festival</option>
+              <option value="ACCOUSTIQUE">Acoustique</option>
               <option value="SHOWCASE">Showcase</option>
               <option value="OTHER">Autre</option>
             </select>

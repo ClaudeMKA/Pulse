@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12);
     
     const user = await prisma.users.create({
-      data: { username: username.toLowerCase(), email: email.toLowerCase(), password: hashedPassword, role: "ADMIN" } // pour avoir full access
+      data: { username: username.toLowerCase(), email: email.toLowerCase(), password: hashedPassword, role: "USER" } // pour avoir full access
     });
     
     const { password: _, ...userWithoutPassword } = user;
