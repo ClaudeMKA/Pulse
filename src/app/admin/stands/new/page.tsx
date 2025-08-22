@@ -4,6 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+interface Location {
+  id: number;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 interface Event {
   id: number;
   title: string;
@@ -13,15 +21,19 @@ export default function NewStandPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    location: "",
+    location_id: "",
     event_id: "",
+    type: "FOOD",
+    opened_at: "",
+    closed_at: "",
   });
 
   useEffect(() => {
-    fetchEvents();
+    Promise.all([fetchEvents(), fetchLocations()]);
   }, []);
 
   const fetchEvents = async () => {
@@ -46,6 +58,19 @@ export default function NewStandPage() {
     }
   };
 
+  const fetchLocations = async () => {
+    try {
+      const response = await fetch("/api/locations");
+      if (response.ok) {
+        const data = await response.json();
+        // L'API retourne { locations: [...], pagination: {...} }
+        setLocations(data.locations || data);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des lieux:", error);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -66,7 +91,10 @@ export default function NewStandPage() {
         },
         body: JSON.stringify({
           ...formData,
+          location_id: formData.location_id ? parseInt(formData.location_id) : null,
           event_id: formData.event_id ? parseInt(formData.event_id) : null,
+          opened_at: formData.opened_at ? new Date(formData.opened_at).toISOString() : null,
+          closed_at: formData.closed_at ? new Date(formData.closed_at).toISOString() : null,
         }),
       });
 
@@ -141,21 +169,88 @@ export default function NewStandPage() {
             />
           </div>
 
-          {/* Localisation */}
+          {/* Lieu */}
           <div>
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-              Localisation *
+            <label htmlFor="location_id" className="block text-sm font-medium text-gray-700 mb-2">
+              Lieu *
             </label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              value={formData.location}
+            <select
+              id="location_id"
+              name="location_id"
+              value={formData.location_id}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Emplacement du stand"
-            />
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Sélectionner un lieu</option>
+              {locations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name} {location.address ? `- ${location.address}` : ""}
+                </option>
+              ))}
+            </select>
+            <div className="mt-2">
+              <Link
+                href="/admin/locations/new"
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Créer un nouveau lieu
+              </Link>
+            </div>
+          </div>
+
+          {/* Type de stand */}
+          <div>
+            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
+              Type de stand *
+            </label>
+            <select
+              id="type"
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="FOOD">Nourriture</option>
+              <option value="ACTIVITE">Activité</option>
+              <option value="TATOOS">Tatouages</option>
+              <option value="SOUVENIRS">Souvenirs</option>
+              <option value="MERCH">Merchandising</option>
+            </select>
+          </div>
+
+          {/* Horaires d'ouverture */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="opened_at" className="block text-sm font-medium text-gray-700 mb-2">
+                Heure d'ouverture *
+              </label>
+              <input
+                type="datetime-local"
+                id="opened_at"
+                name="opened_at"
+                value={formData.opened_at}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="closed_at" className="block text-sm font-medium text-gray-700 mb-2">
+                Heure de fermeture *
+              </label>
+              <input
+                type="datetime-local"
+                id="closed_at"
+                name="closed_at"
+                value={formData.closed_at}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
 
           {/* Événement associé */}

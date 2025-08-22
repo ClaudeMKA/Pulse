@@ -293,19 +293,401 @@ NEXTAUTH_URL="http://localhost:3000"
 - **`POST /api/cron/stop-scheduler`** - Arrêter le planificateur de notifications
 - **`GET /api/cron/status`** - Statut du planificateur
 
-### Codes de réponse HTTP
-- **200** : Succès
-- **201** : Ressource créée
-- **400** : Erreur de validation
-- **401** : Non authentifié
-- **403** : Non autorisé (rôle insuffisant)
-- **404** : Ressource non trouvée
-- **409** : Conflit (doublon)
-- **500** : Erreur interne du serveur
+## 📡 Corps des Requêtes API - Détails complets
 
-### Exemple d'utilisation avec authentification
+### 🔐 Authentification
+
+#### POST /api/auth/register
+```json
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "motdepasse123"
+}
+```
+
+**Réponse de succès (201) :**
+```json
+{
+  "message": "Compte créé",
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "role": "ADMIN",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+#### POST /api/auth/login
+```json
+{
+  "email": "john@example.com",
+  "password": "motdepasse123"
+}
+```
+
+**Réponse de succès :**
+```json
+{
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "role": "ADMIN"
+  }
+}
+```
+
+### 🎭 Gestion des Artistes
+
+#### POST /api/artists
+```json
+{
+  "name": "Artiste Example",
+  "desc": "Description détaillée de l'artiste et de son style musical",
+  "image_path": "/assets/artists/artiste-example.jpg"
+}
+```
+
+**Réponse de succès (201) :**
+```json
+{
+  "id": 1,
+  "name": "Artiste Example",
+  "desc": "Description détaillée de l'artiste et de son style musical",
+  "image_path": "/assets/artists/artiste-example.jpg",
+  "created_at": "2024-01-15T10:30:00.000Z",
+  "updated_at": "2024-01-15T10:30:00.000Z"
+}
+```
+
+#### PUT /api/artists/[id]
+```json
+{
+  "name": "Artiste Example Modifié",
+  "desc": "Nouvelle description de l'artiste",
+  "image_path": "/assets/artists/nouvelle-image.jpg"
+}
+```
+
+#### GET /api/artists
+**Paramètres de requête :**
+```
+?page=1&limit=20&search=artiste&sortBy=name&sortOrder=asc
+```
+
+**Réponse :**
+```json
+[
+  {
+    "id": 1,
+    "name": "Artiste Example",
+    "desc": "Description de l'artiste",
+    "image_path": "/assets/artists/artiste-example.jpg",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-15T10:30:00.000Z"
+  }
+]
+```
+
+### 🎪 Gestion des Événements
+
+#### POST /api/events
+```json
+{
+  "title": "Concert de Jazz",
+  "desc": "Une soirée exceptionnelle de jazz avec des artistes talentueux",
+  "start_date": "2024-02-15T20:00:00.000Z",
+  "end_date": "2024-02-15T23:00:00.000Z",
+  "genre": "JAZZ",
+  "type": "CONCERT",
+  "location": "Salle de Concert Central",
+  "latitude": 48.8566,
+  "longitude": 2.3522,
+  "image_path": "/assets/events/concert-jazz.jpg",
+  "artist_id": 1
+}
+```
+
+**Réponse de succès (201) :**
+```json
+{
+  "id": 1,
+  "title": "Concert de Jazz",
+  "desc": "Une soirée exceptionnelle de jazz avec des artistes talentueux",
+  "start_date": "2024-02-15T20:00:00.000Z",
+  "end_date": "2024-02-15T23:00:00.000Z",
+  "genre": "JAZZ",
+  "type": "CONCERT",
+  "location": "Salle de Concert Central",
+  "latitude": 48.8566,
+  "longitude": 2.3522,
+  "image_path": "/assets/events/concert-jazz.jpg",
+  "artist_id": 1,
+  "created_at": "2024-01-15T10:30:00.000Z",
+  "updated_at": "2024-01-15T10:30:00.000Z"
+}
+```
+
+#### GET /api/events
+**Paramètres de requête :**
+```
+?page=1&limit=20&search=jazz&genre=JAZZ&type=CONCERT&artist_id=1&upcoming=true
+```
+
+**Réponse avec pagination :**
+```json
+{
+  "events": [
+    {
+      "id": 1,
+      "title": "Concert de Jazz",
+      "desc": "Une soirée exceptionnelle de jazz",
+      "start_date": "2024-02-15T20:00:00.000Z",
+      "genre": "JAZZ",
+      "type": "CONCERT",
+      "location": "Salle de Concert Central",
+      "artist": {
+        "id": 1,
+        "name": "Artiste Example",
+        "image_path": "/assets/artists/artiste-example.jpg"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPreviousPage": false
+  }
+}
+```
+
+#### PUT /api/events/[id]
+```json
+{
+  "title": "Concert de Jazz Modifié",
+  "desc": "Description mise à jour de l'événement",
+  "start_date": "2024-02-20T20:00:00.000Z",
+  "end_date": "2024-02-20T23:00:00.000Z",
+  "genre": "JAZZ",
+  "type": "CONCERT",
+  "location": "Nouvelle Salle de Concert",
+  "latitude": 48.8600,
+  "longitude": 2.3500,
+  "image_path": "/assets/events/nouvelle-image.jpg",
+  "artist_id": 2
+}
+```
+
+### 👥 Gestion des Utilisateurs
+
+#### POST /api/users
+```json
+{
+  "username": "nouveau_user",
+  "email": "nouveau@example.com",
+  "password": "motdepasse123",
+  "role": "USER"
+}
+```
+
+**Réponse de succès (201) :**
+```json
+{
+  "id": 2,
+  "username": "nouveau_user",
+  "email": "nouveau@example.com",
+  "role": "USER",
+  "created_at": "2024-01-15T10:30:00.000Z",
+  "updated_at": "2024-01-15T10:30:00.000Z"
+}
+```
+
+#### PATCH /api/users/[id]
+```json
+{
+  "username": "username_modifie",
+  "email": "email_modifie@example.com",
+  "role": "ADMIN",
+  "password": "nouveau_mot_de_passe"
+}
+```
+
+#### GET /api/users
+**Paramètres de requête :**
+```
+?page=1&limit=20&search=admin&role=ADMIN&sortBy=created_at&sortOrder=desc
+```
+
+**Réponse avec pagination :**
+```json
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "john_doe",
+      "email": "john@example.com",
+      "role": "ADMIN",
+      "created_at": "2024-01-15T10:30:00.000Z",
+      "updated_at": "2024-01-15T10:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPreviousPage": false
+  }
+}
+```
+
+### 📁 Upload de Fichiers
+
+#### POST /api/upload
+**FormData :**
+```
+type: "artists" | "events"
+file: [fichier image]
+```
+
+**Réponse de succès (201) :**
+```json
+{
+  "filename": "artiste-1234567890.jpg",
+  "path": "/assets/artists/artiste-1234567890.jpg",
+  "size": 1024000,
+  "type": "image/jpeg"
+}
+```
+
+### 🔔 Système de Notifications
+
+#### POST /api/notifications
+```json
+{
+  "event_id": 1,
+  "type": "ONE_HOUR_BEFORE",
+  "title": "Rappel événement",
+  "message": "L'événement commence dans 1 heure",
+  "scheduled_for": "2024-02-15T19:00:00.000Z"
+}
+```
+
+**Réponse de succès (201) :**
+```json
+{
+  "id": 1,
+  "event_id": 1,
+  "type": "ONE_HOUR_BEFORE",
+  "title": "Rappel événement",
+  "message": "L'événement commence dans 1 heure",
+  "scheduled_for": "2024-02-15T19:00:00.000Z",
+  "is_sent": false,
+  "created_at": "2024-01-15T10:30:00.000Z"
+}
+```
+
+#### GET /api/notifications
+**Paramètres de requête :**
+```
+?page=1&limit=20&type=ONE_HOUR_BEFORE&is_sent=false&event_id=1
+```
+
+**Réponse avec relations :**
+```json
+{
+  "notifications": [
+    {
+      "id": 1,
+      "event_id": 1,
+      "type": "ONE_HOUR_BEFORE",
+      "title": "Rappel événement",
+      "message": "L'événement commence dans 1 heure",
+      "scheduled_for": "2024-02-15T19:00:00.000Z",
+      "is_sent": false,
+      "created_at": "2024-01-15T10:30:00.000Z",
+      "event": {
+        "id": 1,
+        "title": "Concert de Jazz",
+        "start_date": "2024-02-15T20:00:00.000Z"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPreviousPage": false
+  }
+}
+```
+
+### ⏰ Tâches Planifiées (Cron)
+
+#### POST /api/cron/start-scheduler
+**Corps vide** - Démarre le planificateur de notifications
+
+**Réponse de succès (200) :**
+```json
+{
+  "message": "Planificateur démarré avec succès",
+  "status": "En cours"
+}
+```
+
+#### POST /api/cron/stop-scheduler
+**Corps vide** - Arrête le planificateur de notifications
+
+**Réponse de succès (200) :**
+```json
+{
+  "message": "Planificateur arrêté avec succès",
+  "status": "Arrêté"
+}
+```
+
+#### GET /api/cron/status
+**Réponse :**
+```json
+{
+  "status": "En cours",
+  "lastCheck": "2024-01-15T10:30:00.000Z",
+  "notificationsScheduled": 5,
+  "notificationsSent": 12
+}
+```
+
+## 📋 Codes de Réponse HTTP
+
+### Succès
+- **200 OK** : Requête traitée avec succès
+- **201 Created** : Ressource créée avec succès
+
+### Erreurs Client
+- **400 Bad Request** : Données invalides ou manquantes
+- **401 Unauthorized** : Authentification requise
+- **403 Forbidden** : Accès refusé (rôle insuffisant)
+- **404 Not Found** : Ressource non trouvée
+- **409 Conflict** : Conflit (doublon, contrainte violée)
+
+### Erreurs Serveur
+- **500 Internal Server Error** : Erreur interne du serveur
+
+## 🔒 Exemples d'Utilisation avec Authentification
+
+### Requête protégée admin
 ```typescript
-// Requête protégée admin
+// Créer un artiste (admin uniquement)
 const response = await fetch('/api/artists', {
   method: 'POST',
   headers: {
@@ -314,88 +696,83 @@ const response = await fetch('/api/artists', {
   },
   body: JSON.stringify({
     name: "Nouvel Artiste",
-    desc: "Description de l'artiste"
+    desc: "Description de l'artiste",
+    image_path: "/assets/artists/image.jpg"
   })
 });
 
 if (response.status === 401) {
   // Rediriger vers la page de connexion
+  router.push('/auth/login');
 } else if (response.status === 403) {
   // Utilisateur non autorisé
+  alert('Accès refusé');
+} else if (response.ok) {
+  const artist = await response.json();
+  console.log('Artiste créé:', artist);
 }
 ```
 
-### Sécurité des données
-- **Validation côté serveur** : Toutes les entrées sont validées avant traitement
-- **Protection contre l'injection SQL** : Utilisation de Prisma ORM
-- **Chiffrement des mots de passe** : Hachage bcrypt avec salt de 12 rounds
-- **Gestion des sessions** : Tokens JWT sécurisés avec expiration
-- **Upload sécurisé** : Validation des types et tailles de fichiers
-- **CORS** : Configuration sécurisée des origines autorisées
+### Requête avec gestion d'erreur
+```typescript
+// Créer un événement avec validation
+try {
+  const response = await fetch('/api/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: "Mon Événement",
+      desc: "Description de l'événement",
+      start_date: "2024-12-25T20:00:00.000Z",
+      genre: "ROCK",
+      type: "CONCERT",
+      location: "Salle de Concert"
+    })
+  });
 
-### Bonnes pratiques implémentées
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Erreur lors de la création');
+  }
+
+  const event = await response.json();
+  console.log('Événement créé:', event);
+} catch (error) {
+  console.error('Erreur:', error.message);
+}
+```
+
+## 🛡️ Sécurité des Données
+
+### Validation côté serveur
+- **Toutes les entrées** sont validées avant traitement
+- **Règles métier** appliquées (longueur min/max, formats, etc.)
+- **Types de données** vérifiés et convertis si nécessaire
+
+### Protection contre les attaques
+- **Injection SQL** : Utilisation de Prisma ORM avec paramètres préparés
+- **XSS** : Échappement automatique des données
+- **CSRF** : Protection intégrée NextAuth.js
+- **Upload malveillant** : Validation des types et tailles de fichiers
+
+### Chiffrement et Hachage
+- **Mots de passe** : Hachage bcrypt avec salt de 12 rounds
+- **Sessions** : Tokens JWT sécurisés avec expiration
+- **HTTPS** : Recommandé en production
+
+## 📊 Bonnes Pratiques Implémentées
+
+### Architecture
 - **Séparation des responsabilités** : Middleware d'authentification réutilisable
-- **Gestion d'erreurs centralisée** : Codes HTTP standardisés et messages d'erreur clairs
+- **Gestion d'erreurs centralisée** : Codes HTTP standardisés et messages clairs
 - **Validation des données** : Règles métier appliquées côté serveur
-- **Logs de sécurité** : Traçabilité des actions d'administration
-- **Protection des routes sensibles** : Vérification systématique des rôles
 
-## 🚀 Déploiement
+### Performance
+- **Pagination** : Limitation du nombre de résultats retournés
+- **Relations optimisées** : Chargement conditionnel des données liées
+- **Cache** : Sessions utilisateur mises en cache
 
-### Préparation de la production
-
-1. **Configurer la base de données**
-   - Utiliser une base PostgreSQL externe (AWS RDS, Supabase, etc.)
-   - Mettre à jour `DATABASE_URL` dans vos variables d'environnement
-
-2. **Variables d'environnement de production**
-   ```env
-   NODE_ENV="production"
-   NEXTAUTH_URL="https://votre-domaine.com"
-   NEXTAUTH_SECRET="secret-production-securise"
-   ```
-
-3. **Migration de la base de données**
-   ```bash
-   npm run db:migrate
-   ```
-
-4. **Build de l'application**
-   ```bash
-   npm run build
-   npm start
-   ```
-1. Connecter votre repository GitHub à Vercel
-2. Configurer les variables d'environnement
-3. Déployer automatiquement à chaque push
-
-### Déploiement sur Docker
-
-```bash
-# Build de l'image
-docker build -t pulse-app .
-
-# Lancement
-docker run -p 3000:3000 --env-file .env pulse-app
-```
-
-## 🧪 Tests et développement
-
-### Commandes utiles
-```bash
-# Linting
-npm run lint
-
-# Build de production
-npm run build
-
-# Démarrage en production
-npm start
-
-# Vérification des types TypeScript
-npx tsc --noEmit
-```
-
----
-
-**Pulse** - Gestion moderne d'événements musicaux 🎵
+### Maintenabilité
+- **Types TypeScript** : Interfaces et types pour toutes les entrées/sorties
+- **Logs structurés** : Traçabilité des actions d'administration
+- **Tests** : Structure prête pour l'ajout de tests unitaires et d'intégration

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     
     // Pour un utilisateur normal, seulement ses notifications
     const notifications = await prisma.notifications.findMany({
-      where: { user_id: session.user.id },
+      where: { user_id: parseInt(session.user.id) },
       orderBy: {
         created_at: 'desc',
       },

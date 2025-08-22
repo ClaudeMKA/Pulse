@@ -8,15 +8,21 @@ interface Artist {
   name: string;
 }
 
+interface Location {
+  id: number;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 interface EventFormData {
   title: string;
   desc: string;
   start_date: string;
   genre: "RAP" | "RNB" | "REGGAE" | "ROCK";
-  type: "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER";
-  location: string;
-  latitude: string;
-  longitude: string;
+  type: "CONCERT" | "ACCOUSTIQUE" | "SHOWCASE" | "OTHER";
+  location_id: string;
   image_path: string;
   artist_id: string;
   price: string;
@@ -32,22 +38,23 @@ export default function CreateEventPage() {
     start_date: "",
     genre: "RAP",
     type: "CONCERT",
-    location: "",
-    latitude: "",
-    longitude: "",
+    location_id: "",
     image_path: "",
     artist_id: "",
     price: "0",
     currency: "EUR",
   });
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<Partial<EventFormData>>({});
+  const [generalError, setGeneralError] = useState<string>("");
   const [previewImage, setPreviewImage] = useState<string>("");
 
   useEffect(() => {
     fetchArtists();
+    fetchLocations();
   }, []);
 
   const fetchArtists = async () => {
@@ -59,6 +66,18 @@ export default function CreateEventPage() {
       }
     } catch (error) {
       console.error("Erreur lors du chargement des artistes:", error);
+    }
+  };
+
+  const fetchLocations = async () => {
+    try {
+      const response = await fetch("/api/locations");
+      if (response.ok) {
+        const data = await response.json();
+        setLocations(data.locations || data);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des lieux:", error);
     }
   };
 
@@ -141,16 +160,8 @@ export default function CreateEventPage() {
       newErrors.start_date = "La date de début doit être dans le futur";
     }
 
-    if (!formData.location.trim()) {
-      newErrors.location = "Le lieu est requis";
-    }
-
-    if (formData.latitude && (isNaN(Number(formData.latitude)) || Number(formData.latitude) < -90 || Number(formData.latitude) > 90)) {
-      newErrors.latitude = "La latitude doit être entre -90 et 90";
-    }
-
-    if (formData.longitude && (isNaN(Number(formData.longitude)) || Number(formData.longitude) < -180 || Number(formData.longitude) > 180)) {
-      newErrors.longitude = "La longitude doit être entre -180 et 180";
+    if (!formData.location_id) {
+      newErrors.location_id = "Le lieu est requis";
     }
 
     if (isNaN(Number(formData.price)) || Number(formData.price) < 0) {
@@ -164,6 +175,10 @@ export default function CreateEventPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Effacer les erreurs précédentes
+    setErrors({});
+    setGeneralError("");
+    
     if (!validateForm()) {
       return;
     }
@@ -174,8 +189,7 @@ export default function CreateEventPage() {
       const eventData = {
         ...formData,
         start_date: new Date(formData.start_date).toISOString(),
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        location_id: parseInt(formData.location_id),
         artist_id: formData.artist_id ? parseInt(formData.artist_id) : null,
         price: parseFloat(formData.price),
       };
@@ -194,7 +208,8 @@ export default function CreateEventPage() {
         router.push(`/admin/events/${result.id}`);
       } else {
         const error = await response.json();
-        alert(`Erreur: ${error.message}`);
+        // Afficher l'erreur dans l'interface au lieu d'un alert
+        setGeneralError(error.message);
       }
     } catch (error) {
       console.error("Erreur lors de la création:", error);
@@ -214,6 +229,14 @@ export default function CreateEventPage() {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
+  // Fonction pour obtenir le nom complet d'un lieu
+  const getLocationDisplayName = (location: Location) => {
+    if (location.address) {
+      return `${location.name} - ${location.address}`;
+    }
+    return location.name;
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
@@ -226,6 +249,27 @@ export default function CreateEventPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {/* Affichage des erreurs générales */}
+        {generalError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Impossible de créer l'événement
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  {generalError}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Titre de l'événement */}
           <div>
@@ -322,7 +366,7 @@ export default function CreateEventPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="CONCERT">Concert</option>
-                <option value="FESTIVAL">Festival</option>
+                <option value="ACCOUSTIQUE">Acoustique</option>
                 <option value="SHOWCASE">Showcase</option>
                 <option value="OTHER">Autre</option>
               </select>
@@ -331,72 +375,38 @@ export default function CreateEventPage() {
 
           {/* Lieu */}
           <div>
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="location_id" className="block text-sm font-medium text-gray-700 mb-2">
               Lieu *
             </label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              value={formData.location}
+            <select
+              id="location_id"
+              name="location_id"
+              value={formData.location_id}
               onChange={handleInputChange}
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.location ? "border-red-300" : "border-gray-300"
+                errors.location_id ? "border-red-300" : "border-gray-300"
               }`}
-              placeholder="Ex: Stade de France, Bercy, Olympia..."
-            />
-            {errors.location && (
-              <p className="mt-1 text-sm text-red-600">{errors.location}</p>
+            >
+              <option value="">Sélectionner un lieu</option>
+              {locations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {getLocationDisplayName(location)}
+                </option>
+              ))}
+            </select>
+            {errors.location_id && (
+              <p className="mt-1 text-sm text-red-600">{errors.location_id}</p>
             )}
-          </div>
-
-          {/* Coordonnées GPS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="latitude" className="block text-sm font-medium text-gray-700 mb-2">
-                Latitude (optionnel)
-              </label>
-              <input
-                type="number"
-                id="latitude"
-                name="latitude"
-                value={formData.latitude}
-                onChange={handleInputChange}
-                step="any"
-                min="-90"
-                max="90"
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.latitude ? "border-red-300" : "border-gray-300"
-                }`}
-                placeholder="Ex: 48.8566"
-              />
-              {errors.latitude && (
-                <p className="mt-1 text-sm text-red-600">{errors.latitude}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="longitude" className="block text-sm font-medium text-gray-700 mb-2">
-                Longitude (optionnel)
-              </label>
-              <input
-                type="number"
-                id="longitude"
-                name="longitude"
-                value={formData.longitude}
-                onChange={handleInputChange}
-                step="any"
-                min="-180"
-                max="180"
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.longitude ? "border-red-300" : "border-gray-300"
-                }`}
-                placeholder="Ex: 2.3522"
-              />
-              {errors.longitude && (
-                <p className="mt-1 text-sm text-red-600">{errors.longitude}</p>
-              )}
-            </div>
+            <p className="mt-1 text-sm text-gray-500">
+              Sélectionnez un lieu existant. Si le lieu n'existe pas, 
+              <button
+                type="button"
+                onClick={() => router.push('/admin/locations/new')}
+                className="text-blue-600 hover:text-blue-800 underline ml-1"
+              >
+                créez-le d'abord
+              </button>
+            </p>
           </div>
 
           {/* Artiste associé */}

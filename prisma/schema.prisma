@@ -47,14 +47,13 @@ model Events {
   end_date    DateTime?
   genre       Genre
   type        EventType
-  location    String?
-  latitude    Float?
-  longitude   Float?
   image_path  String?
   price       Float    @default(0)
   currency    String   @default("EUR")
   artist_id   Int?
+  location_id Int?
   artist      Artists? @relation(fields: [artist_id], references: [id])
+  location    Locations? @relation(fields: [location_id], references: [id])
   stands      Stands[]
   notifications EventNotifications[]
   participants EventParticipants[]
@@ -63,6 +62,21 @@ model Events {
 
   @@map("events")
 }
+
+model Locations {
+  id          Int      @id @default(autoincrement())
+  name        String
+  latitude    Float?   // Changé de Int? à Float?
+  longitude   Float?   // Changé de Int? à Float?
+  address     String?  // Corrigé "adress" en "address"
+  events      Events[] // Relation inverse
+  stands      Stands[] // Relation inverse
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("locations")
+}
+
 
 model ContactMessages {
   id          Int      @id @default(autoincrement())
@@ -87,7 +101,8 @@ model Stands {
   opened_at   DateTime @default(now())
   closed_at   DateTime @default(now())
   image_path  String?
-  location    String?
+  location_id Int?
+  location    Locations? @relation(fields: [location_id], references: [id])
   event_id    Int?
   event       Events?  @relation(fields: [event_id], references: [id])
   created_at  DateTime @default(now())

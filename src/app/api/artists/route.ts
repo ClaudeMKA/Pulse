@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminAuth } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
+  // Vérifier l'authentification admin
+  const { error, session } = await requireAdminAuth(request);
+  if (error) return error;
   try {
     const body = await request.json();
     const { name, desc, image_path } = body;
@@ -36,17 +40,11 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const artists = await prisma.artists.findMany({
-      include: {
-        events: {
-          orderBy: {
-            start_date: 'asc'
-          }
-        }
-      },
       orderBy: {
         created_at: "desc",
       },
     });
+
     return NextResponse.json(artists);
   } catch (error) {
     console.error("Erreur lors de la récupération des artistes:", error);
