@@ -27,7 +27,9 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         {/* Logo */}
-        <Image src="/assets/logo-pulse.svg" alt="Pulse" width={100} height={40}/>
+        <Link href="/">
+          <Image src="/assets/logo-pulse.svg" alt="Pulse" width={100} height={40}/>
+        </Link>
         
         {/* Navigation */}
         <nav
@@ -35,9 +37,9 @@ export default function Header() {
             scrolled ? "text-gray-800" : "text-white"
           }`}
         >
-          <a href="#artists" className="hover:text-violet-600 transition">
+          <Link href="/artistes" className="hover:text-violet-600 transition">
             Artistes
-          </a>
+          </Link>
           <a href="#events" className="hover:text-violet-600 transition">
             Programme
           </a>

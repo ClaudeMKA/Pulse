@@ -5,6 +5,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { EventType, EventMarker, eventIcons } from "@/types/map";
 import { MapFilters } from "./Map/MapFilters";
+import { COLORS } from "@/lib/theme";
 
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
@@ -187,6 +188,7 @@ export default function Map() {
 
   return (
     <div className="relative w-full h-[600px] rounded-xl overflow-hidden">
+      <h2 className="text-4xl font-bold mb-20 text-center" style={{ color: COLORS.rose }}>Tous les lieux, une seule carte</h2>
       <MapFilters
         activeFilters={activeFilters}
         onFilterChange={handleFilterChange}

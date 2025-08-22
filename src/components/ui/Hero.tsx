@@ -54,14 +54,14 @@ export default function Hero({ stats, events }: HeroProps) {
     return () => clearInterval(timer);
   }, []);
   return (
-    <section className="relative w-full flex flex-col items-center justify-center min-h-[80vh] py-24 px-4 bg-white overflow-hidden">
-      <Image
-        src="/assets/events/hero-bg.jpg"
-        alt="Pulse Festival"
-        fill
-        priority
-        style={{ objectFit: "cover", zIndex: 0 }}
-        className="pointer-events-none select-none"
+    <section className="relative w-full flex flex-col items-center justify-center min-h-[80vh] py-24 px-4 bg-black overflow-hidden">
+      <video
+        src="/assets/bg-hero.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-white/20 z-10" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(125,79,254,0.35),transparent_40%),radial-gradient(circle_at_80%_30%,rgba(255,144,182,0.35),transparent_40%)] z-10" />

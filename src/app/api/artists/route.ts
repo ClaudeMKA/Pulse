@@ -36,10 +36,18 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const artists = await prisma.artists.findMany({
+      include: {
+        events: {
+          orderBy: {
+            start_date: "asc",
+          },
+        },
+      },
       orderBy: {
         created_at: "desc",
       },
     });
+
     return NextResponse.json(artists);
   } catch (error) {
     console.error("Erreur lors de la récupération des artistes:", error);
