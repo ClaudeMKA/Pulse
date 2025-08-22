@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { requireAdminAuth } from "@/lib/api-auth";
+import { NotificationScheduler } from "@/lib/notificationScheduler";
 
 export async function POST(request: NextRequest) {
+  // Vérifier l'authentification admin
+  const { error, session } = await requireAdminAuth(request);
+  if (error) return error;
+
   try {
     const body = await request.json();
     const {
@@ -105,7 +111,7 @@ export async function POST(request: NextRequest) {
         desc: desc.trim(),
         start_date: eventDate,
         genre: genre as "RAP" | "RNB" | "REGGAE" | "ROCK",
-        type: type as "CONCERT" | "FESTIVAL" | "SHOWCASE" | "OTHER",
+        type: type as "CONCERT" | "ACCOUSTIQUE" | "SHOWCASE" | "OTHER",
         location: location.trim(),
         latitude: latitude !== null ? Number(latitude) : null,
         longitude: longitude !== null ? Number(longitude) : null,
@@ -114,6 +120,9 @@ export async function POST(request: NextRequest) {
       },
       // Supprimer l'include pour l'instant
     });
+
+    // Planifier les notifications automatiquement
+    await NotificationScheduler.scheduleEventNotifications(event.id);
 
     return NextResponse.json(event, { status: 201 });
   } catch (error) {
@@ -168,11 +177,19 @@ export async function GET(request: NextRequest) {
     // Calculer le skip pour la pagination
     const skip = (page - 1) * limit;
 
-    // Récupérer les événements avec pagination
+    // Récupérer les événements avec pagination ET la relation artist
     const [events, total] = await Promise.all([
       prisma.events.findMany({
         where,
-        // Supprimer l'include pour l'instant
+        include: {
+          artist: {
+            select: {
+              id: true,
+              name: true,
+              image_path: true,
+            },
+          },
+        },
         orderBy: {
           start_date: "asc",
         },

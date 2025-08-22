@@ -15,12 +15,12 @@ datasource db {
 
 model Users {
   id          Int      @id @default(autoincrement())
-  username    String   @unique // ← Corrigé "usermane" en "username"
-  email       String   @unique // ← Ajouté @unique
+  username    String   @unique
+  email       String   @unique
   password    String
-  role        Role     @default(ADMIN) // ← Ajouté valeur par défaut
+  role        Role     @default(ADMIN)
   created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt // ← Ajouté pour le suivi
+  updated_at  DateTime @updatedAt
   notifications Notifications[]
 
   @@map("users")
@@ -31,7 +31,7 @@ model Artists {
   name        String
   desc        String?
   image_path  String?
-  events      Events[] // ← Ajouter cette ligne (relation inverse)
+  events      Events[]
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -43,6 +43,7 @@ model Events {
   title       String
   desc        String
   start_date  DateTime
+  end_date    DateTime?
   genre       Genre
   type        EventType
   location    String?
@@ -52,6 +53,9 @@ model Events {
   artist_id   Int?
   artist      Artists? @relation(fields: [artist_id], references: [id])
   stands      Stands[]
+  notifications EventNotifications[]
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   @@map("events")
 }
@@ -72,14 +76,47 @@ model ContactMessages {
 model Stands {
   id          Int      @id @default(autoincrement())
   name        String
-  description String
-  location    String
+  description String?
+  capacity    Int?
+  price       Float?
+  type        StandType
+  opened_at   DateTime
+  closed_at   DateTime
+  image_path  String?
+  location    String?
   event_id    Int?
   event       Events?  @relation(fields: [event_id], references: [id])
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   @@map("stands")
+}
+
+enum StandType {
+  FOOD
+  ACTIVITE
+  TATOOS
+  SOUVENIRS
+  MERCH
+}
+
+enum Genre {
+  RAP
+  RNB
+  REGGAE
+  ROCK
+}
+
+enum EventType {
+  CONCERT
+  ACCOUSTIQUE
+  SHOWCASE
+  OTHER
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model Notifications {
@@ -95,21 +132,19 @@ model Notifications {
   @@map("notifications")
 }
 
-enum Genre {
-  RAP
-  RNB
-  REGGAE
-  ROCK
-}
-enum EventType {
-  CONCERT
-  FESTIVAL
-  SHOWCASE
-  OTHER
-}
-enum Role {
-  USER
-  ADMIN
+model EventNotifications {
+  id          Int      @id @default(autoincrement())
+  event_id    Int
+  event       Events   @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  type        ReminderType
+  title       String
+  message     String
+  sent_at     DateTime?
+  is_sent     Boolean  @default(false)
+  scheduled_for DateTime
+  created_at  DateTime @default(now())
+
+  @@map("event_notifications")
 }
 
 enum NotificationType {
@@ -117,5 +152,10 @@ enum NotificationType {
   WARNING
   SUCCESS
   ERROR
+}
+
+enum ReminderType {
+  ONE_HOUR_BEFORE
+  TEN_MINUTES_BEFORE
 }
 

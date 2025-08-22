@@ -26,13 +26,23 @@ export default function NewStandPage() {
 
   const fetchEvents = async () => {
     try {
+      console.log("Fetching events...");
       const response = await fetch("/api/events");
+      console.log("Response status:", response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        setEvents(data);
+        console.log("Events data:", data);
+        // L'API retourne {events, pagination}
+        setEvents(Array.isArray(data.events) ? data.events : []);
+      } else {
+        console.error("Response not ok:", response.status, response.statusText);
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
       }
     } catch (error) {
       console.error("Erreur lors du chargement des événements:", error);
+      setEvents([]);
     }
   };
 
