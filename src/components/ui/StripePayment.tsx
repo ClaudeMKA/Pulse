@@ -1,40 +1,70 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { loadStripe } from "@stripe/stripe-js";
 import {
-  Elements,
   CardElement,
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import { COLORS } from "@/lib/theme";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
-interface Event {
-  id: number;
-  title: string;
-  price: number;
-  currency: string;
+interface StripePaymentProps {
+  eventId: number;
+  amount: number;
+  onSuccess: () => void;
+  onError: (error: string) => void;
 }
 
-interface PaymentFormProps {
-  event: Event;
-  clientSecret: string;
-  onPaymentSuccess: () => void;
-  onPaymentError: (error: string) => void;
-}
-
-function PaymentForm({ event, clientSecret, onPaymentSuccess, onPaymentError }: PaymentFormProps) {
+export default function StripePayment({ eventId, amount, onSuccess, onError }: StripePaymentProps) {
   const stripe = useStripe();
   const elements = useElements();
+  const [clientSecret, setClientSecret] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState("");
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!isInitialized) {
+      setIsInitialized(true);
+      createPaymentIntent();
+    }
+  }, [eventId, isInitialized]);
+
+  const createPaymentIntent = async () => {
+    try {
+      const response = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: eventId,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setClientSecret(data.clientSecret);
+      } else {
+        const error = await response.json();
+        setMessage(error.message);
+        onError(error.message);
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+      const errorMessage = "Erreur lors de l'initialisation du paiement";
+      setMessage(errorMessage);
+      onError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
+    if (!stripe || !elements || !clientSecret) {
       return;
     }
 
@@ -49,175 +79,105 @@ function PaymentForm({ event, clientSecret, onPaymentSuccess, onPaymentError }: 
 
     if (error) {
       setMessage(error.message || "Une erreur est survenue");
-      onPaymentError(error.message || "Une erreur est survenue");
+      onError(error.message || "Une erreur est survenue");
     } else {
       setMessage("Paiement réussi !");
-      onPaymentSuccess();
+      onSuccess();
     }
 
     setIsProcessing(false);
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Paiement pour {event.title}
-        </h3>
-        <div className="bg-gray-50 rounded-lg p-4 mb-4">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700">Montant :</span>
-            <span className="text-xl font-bold text-gray-900">
-              {event.price.toFixed(2)} {event.currency}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="border border-gray-300 rounded-md p-4">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: "16px",
-                color: "#424770",
-                "::placeholder": {
-                  color: "#aab7c4",
-                },
-              },
-              invalid: {
-                color: "#9e2146",
-              },
-            },
-          }}
-        />
-      </div>
-
-      {message && (
-        <div className={`p-3 rounded-md ${
-          message.includes("réussi") 
-            ? "bg-green-50 text-green-800 border border-green-200" 
-            : "bg-red-50 text-red-800 border border-red-200"
-        }`}>
-          {message}
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={!stripe || isProcessing}
-        className="w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isProcessing ? (
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Traitement en cours...
-          </div>
-        ) : (
-          `Payer ${event.price.toFixed(2)} ${event.currency}`
-        )}
-      </button>
-    </form>
-  );
-}
-
-interface StripePaymentProps {
-  event: Event;
-  onPaymentSuccess: () => void;
-  onPaymentError: (error: string) => void;
-  onCancel: () => void;
-}
-
-export default function StripePayment({ event, onPaymentSuccess, onPaymentError, onCancel }: StripePaymentProps) {
-  const [clientSecret, setClientSecret] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    createPaymentIntent();
-  }, [event.id]);
-
-  const createPaymentIntent = async () => {
-    try {
-      const response = await fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          eventId: event.id,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setClientSecret(data.clientSecret);
-      } else {
-        const error = await response.json();
-        setError(error.message);
-        onPaymentError(error.message);
-      }
-    } catch (error) {
-      console.error("Erreur:", error);
-      setError("Erreur lors de l'initialisation du paiement");
-      onPaymentError("Erreur lors de l'initialisation du paiement");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" style={{ borderColor: COLORS.violet }}></div>
         <p className="text-gray-600">Initialisation du paiement...</p>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
-          <p className="text-red-800">{error}</p>
-        </div>
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-        >
-          Retour
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-md mx-auto">
-      <div className="mb-6">
-        <button
-          onClick={onCancel}
-          className="flex items-center text-sm text-gray-600 hover:text-gray-800 mb-4"
-        >
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Retour
-        </button>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Champ de carte de crédit */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium" style={{ color: COLORS.violet }}>
+          Informations de carte bancaire
+        </label>
+        <div className="p-4 border-2 rounded-2xl transition-all duration-200 focus-within:border-violet-400" style={{ borderColor: COLORS.lavande, backgroundColor: `${COLORS.violet}05` }}>
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: COLORS.violet,
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  '::placeholder': {
+                    color: '#9CA3AF',
+                  },
+                  iconColor: COLORS.violet,
+                },
+                invalid: {
+                  color: '#EF4444',
+                  iconColor: '#EF4444',
+                },
+              },
+            }}
+          />
+        </div>
+        <p className="text-xs text-gray-500">
+          Saisissez vos informations de carte. Elles sont sécurisées et cryptées.
+        </p>
       </div>
 
-      <Elements stripe={stripePromise}>
-        <PaymentForm
-          event={event}
-          clientSecret={clientSecret}
-          onPaymentSuccess={onPaymentSuccess}
-          onPaymentError={onPaymentError}
-        />
-      </Elements>
+      {/* Message d'erreur/succès */}
+      {message && (
+        <div className={`p-4 rounded-2xl text-sm border-2 ${
+          message.includes("réussi")
+            ? "border-green-200 text-green-800" 
+            : "border-red-200 text-red-800"
+        }`} style={{ 
+          backgroundColor: message.includes("réussi") 
+            ? `${COLORS.violet}10` 
+            : '#FEF2F2' 
+        }}>
+          <div className="flex items-center gap-2">
+            <span>{message.includes("réussi") ? "✅" : "⚠️"}</span>
+            {message}
+          </div>
+        </div>
+      )}
 
-      <div className="mt-6 text-xs text-gray-500 text-center">
-        <p>Paiement sécurisé par Stripe</p>
-        <p>Vos informations de carte sont cryptées et sécurisées</p>
+      {/* Bouton de paiement */}
+      <button
+        type="submit"
+        disabled={!stripe || isProcessing}
+        className="w-full flex justify-center items-center px-8 py-4 rounded-2xl shadow-lg text-lg font-bold text-white transition-all duration-300 transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+        style={{ backgroundColor: COLORS.violet }}
+      >
+        {isProcessing ? (
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+            Traitement en cours...
+          </div>
+        ) : (
+          <>
+            <span className="mr-2">💳</span>
+            Payer {amount.toFixed(2)}€
+          </>
+        )}
+      </button>
+
+      {/* Informations de sécurité */}
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center gap-2 text-sm" style={{ color: COLORS.violet }}>
+          <span>🛡️</span>
+          <span className="font-medium">Protection 3D Secure activée</span>
+        </div>
+        <p className="text-xs text-gray-500">
+          Toutes les transactions sont sécurisées par Stripe et conformes aux standards PCI DSS
+        </p>
       </div>
-    </div>
+    </form>
   );
 }

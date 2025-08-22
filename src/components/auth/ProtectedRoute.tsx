@@ -17,12 +17,12 @@ export default function ProtectedRoute({ children, requiredRole = "ADMIN" }: Pro
     if (status === "loading") return;
     
     if (!session) {
-      router.push("/auth/login");
+      router.push("/login");
       return;
     }
 
     if (requiredRole === "ADMIN" && session.user.role !== "ADMIN") {
-      router.push("/auth/login?error=unauthorized");
+      router.push("/login?error=unauthorized");
       return;
     }
   }, [session, status, router, requiredRole]);

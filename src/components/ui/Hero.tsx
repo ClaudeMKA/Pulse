@@ -8,7 +8,7 @@ interface HeroProps {
   stats: {
     artistsCount: number;
     eventsCount: number;
-    cities: string[];
+    cities: string;
   };
   events: Array<{
     id: number;
@@ -54,14 +54,14 @@ export default function Hero({ stats, events }: HeroProps) {
     return () => clearInterval(timer);
   }, []);
   return (
-    <section className="relative w-full flex flex-col items-center justify-center min-h-[80vh] py-24 px-4 bg-white overflow-hidden">
-      <Image
-        src="/assets/events/hero-bg.jpg"
-        alt="Pulse Festival"
-        fill
-        priority
-        style={{ objectFit: "cover", zIndex: 0 }}
-        className="pointer-events-none select-none"
+    <section className="relative w-full flex flex-col items-center justify-center min-h-[80vh] max-h-[100vh] py-24 px-4 bg-black overflow-hidden">
+      <video
+        src="/assets/bg-hero.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-white/20 z-10" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(125,79,254,0.35),transparent_40%),radial-gradient(circle_at_80%_30%,rgba(255,144,182,0.35),transparent_40%)] z-10" />
@@ -75,7 +75,7 @@ export default function Hero({ stats, events }: HeroProps) {
             PULSE FESTIVAL
           </h1>
           <p className="text-lg md:text-2xl text-white/95 text-center max-w-2xl mx-auto">
-            L'événement musical ultime qui fait vibrer la France
+            L&apos;événement musical ultime qui fait vibrer la France
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <span className="px-4 py-2 rounded-full text-sm font-semibold text-white border border-white/30 bg-white/10">
@@ -86,7 +86,7 @@ export default function Hero({ stats, events }: HeroProps) {
             </span>
             {stats.cities.length > 0 && (
               <span className="px-4 py-2 rounded-full text-sm font-semibold text-white border border-white/30 bg-white/10">
-                {stats.cities.length} Villes
+                📍 {stats.cities}
               </span>
             )}
           </div>

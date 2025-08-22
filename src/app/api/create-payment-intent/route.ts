@@ -6,6 +6,8 @@ import { stripe } from "@/lib/stripe";
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("=== Début création PaymentIntent ===");
+    
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user?.id) {
@@ -17,18 +19,38 @@ export async function POST(request: NextRequest) {
 
     const { eventId } = await request.json();
     const userId = parseInt(session.user.id);
+    
+    console.log("EventId reçu:", eventId);
+    console.log("UserId:", userId);
 
     if (!eventId || isNaN(eventId)) {
+      console.log("ID d'événement invalide:", eventId);
       return NextResponse.json(
         { message: "ID d'événement invalide" },
         { status: 400 }
       );
     }
 
+    // Vérifier que l'utilisateur existe
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      console.log("Utilisateur introuvable avec ID:", userId);
+      return NextResponse.json(
+        { message: "Utilisateur introuvable. Veuillez vous reconnecter." },
+        { status: 401 }
+      );
+    }
+
     // Vérifier que l'événement existe
+    console.log("Recherche de l'événement avec ID:", eventId);
     const event = await prisma.events.findUnique({
       where: { id: eventId },
     });
+    
+    console.log("Événement trouvé:", event ? `ID: ${event.id}, Prix: ${event.price}` : "NULL");
 
     if (!event) {
       return NextResponse.json(
@@ -104,6 +126,14 @@ export async function POST(request: NextRequest) {
     });
 
     // Créer l'inscription avec le statut PENDING
+    console.log("Tentative de création EventParticipant avec:", {
+      user_id: userId,
+      event_id: eventId,
+      payment_status: "PENDING",
+      payment_intent_id: paymentIntent.id,
+      amount_paid: event.price,
+    });
+    
     await prisma.eventParticipants.create({
       data: {
         user_id: userId,
@@ -118,10 +148,26 @@ export async function POST(request: NextRequest) {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur lors de la création du PaymentIntent:", error);
+    
+    // Plus de détails sur l'erreur
+    let errorMessage = "Erreur lors de la création du paiement";
+    
+    if (error?.code) {
+      console.error("Code d'erreur:", error.code);
+      errorMessage += ` (${error.code})`;
+    }
+    
+    if (error?.message) {
+      console.error("Message d'erreur:", error.message);
+    }
+    
     return NextResponse.json(
-      { message: "Erreur lors de la création du paiement" },
+      { 
+        message: errorMessage,
+        details: error?.message || "Erreur inconnue"
+      },
       { status: 500 }
     );
   }

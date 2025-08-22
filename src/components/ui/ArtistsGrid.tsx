@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { COLORS } from "@/lib/theme";
 
-export type Artist = { name: string; image: string };
+export type Artist = { name: string; image_path: string };
 
 export default function ArtistsGrid({ artists }: { artists: Artist[] }) {
   return (
@@ -13,8 +13,16 @@ export default function ArtistsGrid({ artists }: { artists: Artist[] }) {
       <div className="flex flex-wrap justify-center gap-12">
         {artists.map((artist) => (
           <div key={artist.name} className="flex flex-col items-center">
-            <div className="rounded-full overflow-hidden shadow-xl border-4 mb-4" style={{ borderColor: COLORS.lavande }}>
-              <Image src={artist.image} alt={artist.name} width={140} height={140} />
+            <div className="rounded-full overflow-hidden shadow-xl border-4 mb-4 h-full" style={{ borderColor: COLORS.lavande }}>
+              <Image 
+                className="w-full h-full object-cover" 
+                src={artist.image_path} 
+                alt={artist.name} 
+                width={140} 
+                height={140}
+                quality={90}
+                sizes="140px"
+              />
             </div>
             <span className="text-2xl font-bold" style={{ color: COLORS.violet }}>{artist.name}</span>
           </div>
