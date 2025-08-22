@@ -151,7 +151,7 @@ export default function AdminLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h1 className="ml-3 text-xl font-semibold text-gray-900">Pulse Admin</h1>
+            <p className="ml-3 text-lg font-semibold text-gray-900">Pulse Admin</p>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
