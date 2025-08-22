@@ -39,15 +39,14 @@ export async function GET() {
       include: {
         events: {
           orderBy: {
-            start_date: "asc",
-          },
-        },
+            start_date: 'asc'
+          }
+        }
       },
       orderBy: {
         created_at: "desc",
       },
     });
-
     return NextResponse.json(artists);
   } catch (error) {
     console.error("Erreur lors de la récupération des artistes:", error);

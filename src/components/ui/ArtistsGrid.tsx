@@ -14,7 +14,15 @@ export default function ArtistsGrid({ artists }: { artists: Artist[] }) {
         {artists.map((artist) => (
           <div key={artist.name} className="flex flex-col items-center">
             <div className="rounded-full overflow-hidden shadow-xl border-4 mb-4 h-full" style={{ borderColor: COLORS.lavande }}>
-              <Image className="w-full h-full object-cover" src={artist.image_path} alt={artist.name} width={140} height={140} />
+              <Image 
+                className="w-full h-full object-cover" 
+                src={artist.image_path} 
+                alt={artist.name} 
+                width={140} 
+                height={140}
+                quality={90}
+                sizes="140px"
+              />
             </div>
             <span className="text-2xl font-bold" style={{ color: COLORS.violet }}>{artist.name}</span>
           </div>

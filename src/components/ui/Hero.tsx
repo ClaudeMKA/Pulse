@@ -54,7 +54,7 @@ export default function Hero({ stats, events }: HeroProps) {
     return () => clearInterval(timer);
   }, []);
   return (
-    <section className="relative w-full flex flex-col items-center justify-center min-h-[80vh] py-24 px-4 bg-black overflow-hidden">
+    <section className="relative w-full flex flex-col items-center justify-center min-h-[80vh] max-h-[100vh] py-24 px-4 bg-black overflow-hidden">
       <video
         src="/assets/bg-hero.mp4"
         autoPlay
@@ -75,7 +75,7 @@ export default function Hero({ stats, events }: HeroProps) {
             PULSE FESTIVAL
           </h1>
           <p className="text-lg md:text-2xl text-white/95 text-center max-w-2xl mx-auto">
-            L'événement musical ultime qui fait vibrer la France
+            L&apos;événement musical ultime qui fait vibrer la France
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <span className="px-4 py-2 rounded-full text-sm font-semibold text-white border border-white/30 bg-white/10">

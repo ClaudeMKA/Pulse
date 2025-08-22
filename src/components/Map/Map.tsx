@@ -1,22 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { EventType, EventMarker, eventIcons } from "@/types/map";
-import { MapFilters } from "./Map/MapFilters";
 import { COLORS } from "@/lib/theme";
+
+// Interface étendue pour les événements avec genre et type
+interface ExtendedEventMarker extends EventMarker {
+  genre?: string;
+  eventType?: string;
+}
 
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   
-  const [events, setEvents] = useState<EventMarker[]>([]);
+  const [events, setEvents] = useState<ExtendedEventMarker[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilters, setActiveFilters] = useState<Set<EventType>>(
-    new Set(['scene', 'food', 'bar', 'boutique', 'info', 'toilettes'] as EventType[])
-  );
+  const [activeFilters, setActiveFilters] = useState<string[]>([
+    'CONCERT', 'FESTIVAL', 'SHOWCASE'
+  ]);
   const [loading, setLoading] = useState(true);
 
   // Charger les events depuis ton API
@@ -30,14 +35,16 @@ export default function Map() {
         const { events: fetchedEvents } = await res.json();
 
         // Adapter les données API au format EventMarker attendu
-        const formatted: EventMarker[] = fetchedEvents
-          .filter((e: any) => e.latitude !== null && e.longitude !== null) // éviter les null
-          .map((e: any) => ({
+        const formatted: ExtendedEventMarker[] = fetchedEvents
+          .filter((e: { latitude: number | null; longitude: number | null }) => e.latitude !== null && e.longitude !== null)
+          .map((e: { id: number; longitude: number; latitude: number; title: string; desc: string; type: string; genre: string }) => ({
             id: String(e.id),
-            coordinates: [e.longitude, e.latitude], // ⚠️ attention : [lng, lat]
+            coordinates: [e.longitude, e.latitude],
             title: e.title,
             description: e.desc,
-            type: mapApiTypeToMarkerType(e.type), // conversion si besoin
+            type: mapApiTypeToMarkerType(e.type),
+            genre: e.genre,
+            eventType: e.type,
           }));
 
         setEvents(formatted);
@@ -81,17 +88,27 @@ export default function Map() {
     mapInstance.current.addControl(new maplibregl.NavigationControl());
   }, []);
 
-  // Filtrer les events
+  // Filtrer les events - logique simple
   const filteredEvents = events.filter((event) => {
-    if (!activeFilters.has(event.type)) return false;
+    // On ne montre que les scènes
+    if (event.type !== 'scene') return false;
+    
+    // Si aucun filtre actif, montrer tout
+    if (activeFilters.length === 0) return true;
+    
+    // Vérifier si l'événement correspond aux filtres de type
+    const matchesType = event.eventType && activeFilters.includes(event.eventType);
+    
+    // L'événement doit correspondre au filtre de type
+    if (!matchesType) return false;
+    
+    // Filtrer par recherche si il y en a une
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return (
-        event.title.toLowerCase().includes(q) ||
-        event.description.toLowerCase().includes(q) ||
-        event.type.toLowerCase().includes(q)
-      );
+      const search = searchQuery.toLowerCase();
+      return event.title.toLowerCase().includes(search) ||
+             event.description?.toLowerCase().includes(search);
     }
+    
     return true;
   });
 
@@ -175,26 +192,67 @@ export default function Map() {
     }
   }, [filteredEvents]);
 
-  // Handlers
-  const handleFilterChange = useCallback((type: EventType, isActive: boolean) => {
-    setActiveFilters((prev) => {
-      const next = new Set(prev);
-      isActive ? next.add(type) : next.delete(type);
-      return next;
-    });
-  }, []);
+  // Fonctions simples pour gérer les filtres
+  const toggleFilter = (filter: string) => {
+    if (activeFilters.includes(filter)) {
+      // Enlever le filtre
+      setActiveFilters(activeFilters.filter(f => f !== filter));
+    } else {
+      // Ajouter le filtre
+      setActiveFilters([...activeFilters, filter]);
+    }
+  };
 
-  const handleSearch = useCallback((query: string) => setSearchQuery(query), []);
+  const handleSearch = (query: string) => setSearchQuery(query);
 
   return (
-    <div className="relative w-full h-[600px] rounded-xl overflow-hidden">
-      <h2 className="text-4xl font-bold mb-20 text-center" style={{ color: COLORS.rose }}>Tous les lieux, une seule carte</h2>
-      <MapFilters
-        activeFilters={activeFilters}
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
-        searchQuery={searchQuery}
-      />
+    <div className="relative w-full h-[600px] rounded-xl overflow-hidden">      
+      {/* Filtres simples en position absolue */}
+      <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm p-4 rounded-xl shadow-lg border-2 max-w-xs w-full" style={{ borderColor: COLORS.lavande }}>
+        <h3 className="font-bold text-lg mb-3 flex items-center gap-2" style={{ color: COLORS.violet }}>
+          🎯 <span>Filtres</span>
+        </h3>
+        
+        {/* Recherche */}
+        <input
+          type="text"
+          placeholder="🔍 Rechercher..."
+          className="w-full p-2 border-2 border-gray-200 rounded-lg mb-3 text-sm focus:border-violet-400 focus:outline-none transition-colors text-gray-800 bg-white placeholder-gray-500"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+        />
+        
+        {/* Filtres */}
+        <div className="space-y-2">
+          {[
+            { name: 'CONCERT', icon: '🎤' },
+            { name: 'FESTIVAL', icon: '🎪' },
+            { name: 'SHOWCASE', icon: '✨' }
+          ].map((filter) => {
+            const isActive = activeFilters.includes(filter.name);
+            return (
+              <button
+                key={filter.name}
+                onClick={() => toggleFilter(filter.name)}
+                className={`w-full flex items-center gap-3 p-2 rounded-lg border-2 transition-all text-sm ${
+                  isActive
+                    ? 'bg-violet-100 border-violet-400 text-violet-700'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-lg">{filter.icon}</span>
+                <span className="font-medium">{filter.name}</span>
+              </button>
+            );
+          })}
+        </div>
+        
+        {/* Compteur */}
+        <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500 text-center">
+          {filteredEvents.length} lieu{filteredEvents.length > 1 ? 'x' : ''} affiché{filteredEvents.length > 1 ? 's' : ''}
+        </div>
+      </div>
+
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
           <p>Chargement des événements...</p>

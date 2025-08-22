@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { COLORS } from '@/lib/theme';
 import Hero from '@/components/ui/Hero';
 import ArtistsGrid from '@/components/ui/ArtistsGrid';
 import EventsTimeline from '@/components/ui/EventsTimeline';
 import FAQ from "@/components/ui/FAQ";
-import Map from "@/components/Map";
+import Map from "@/components/Map/Map";
 import Header from '@/components/ui/Header';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorMessage from '@/components/ui/ErrorMessage';
+import Footer from '@/components/ui/Footer';
 
 type Event = {
   id: number;
@@ -61,15 +63,18 @@ export default function Home() {
         
         setEvents(formattedEvents);
 
-        const uniqueArtists = new Set<any>();
+        const uniqueArtists = new Set<{name: string, image_path: string}>();
         formattedEvents.forEach((event: Event) => {
           if (event.artist?.name) {
-            uniqueArtists.add({name: event.artist.name, image_path: event.artist.image_path});
+            uniqueArtists.add({
+              name: event.artist.name, 
+              image_path: event.artist.image_path || '/assets/placeholder-artist.jpg'
+            });
           }
         });
         setArtists(uniqueArtists);
         
-      } catch (err) {
+      } catch {
         setError('Impossible de charger les événements. Veuillez réessayer plus tard.');
       } finally {
         setIsLoading(false);
@@ -80,19 +85,11 @@ export default function Home() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinner size="lg" fullScreen />;
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500">{error}</p>
-      </div>
-    );
+    return <ErrorMessage message={error} fullScreen />;
   }
 
   const sortedEvents = [...events].sort(
@@ -108,7 +105,7 @@ export default function Home() {
     type: event.type,
     location: event.location || 'Lieu non spécifié',
     artist: { name: event.artist?.name || 'Artiste inconnu' },
-    image_path: event.image_path
+    image_path: event.image_path || '/assets/placeholder-event.jpg'
   }));
   
   const artistList = Array.from(artists).map(artist => ({
@@ -127,19 +124,13 @@ export default function Home() {
         }}
         events={events}
       />
-      <div className="flex relative w-full h-full mb-8">
-        <div className="w-full">
-          {artistList.length > 0 && <ArtistsGrid artists={artistList} />}
-          <Map events={events} />
-          {timelineEvents.length > 0 && <EventsTimeline events={timelineEvents} />}
-          <FAQ items={faqItems} />
-          
-          <footer className="w-full py-10 px-4 text-center" style={{ background: COLORS.violet }}>
-            <p className="text-white font-semibold text-lg">
-              &copy; {new Date().getFullYear()} Pulse Festival — Tous droits réservés.
-            </p>
-          </footer>
-        </div>
+      <div className="w-full">
+        {artistList.length > 0 && <ArtistsGrid artists={artistList} />}
+        <Map />
+        {timelineEvents.length > 0 && <EventsTimeline events={timelineEvents} />}
+        <FAQ items={faqItems} />
+        
+        <Footer />
       </div>
     </main>
   );

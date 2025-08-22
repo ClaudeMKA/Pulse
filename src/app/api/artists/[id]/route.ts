@@ -7,7 +7,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id: paramId } = await params;
+    const id = parseInt(paramId);
 
     if (isNaN(id)) {
       return NextResponse.json(
@@ -16,9 +17,16 @@ export async function GET(
       );
     }
 
-    const artist = await prisma.artists.findUnique({
-      where: { id },
-    });
+          const artist = await prisma.artists.findUnique({
+        where: { id },
+        include: {
+          events: {
+            orderBy: {
+              start_date: 'asc'
+            }
+          }
+        }
+      });
 
     if (!artist) {
       return NextResponse.json(
@@ -42,11 +50,12 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   // Vérifier l'authentification admin
-  const { error, session } = await requireAdminAuth(request);
+  const { error } = await requireAdminAuth(request);
   if (error) return error;
 
   try {
-    const id = parseInt(params.id);
+    const { id: paramId } = await params;
+    const id = parseInt(paramId);
     const body = await request.json();
     const { name, desc, image_path } = body;
 
@@ -89,11 +98,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   // Vérifier l'authentification admin
-  const { error, session } = await requireAdminAuth(request);
+  const { error } = await requireAdminAuth(request);
   if (error) return error;
 
   try {
-    const id = parseInt(params.id);
+    const { id: paramId } = await params;
+    const id = parseInt(paramId);
 
     if (isNaN(id)) {
       return NextResponse.json(

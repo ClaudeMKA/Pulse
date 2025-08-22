@@ -10,7 +10,7 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > window.innerHeight * 0.7); // après 70% du Hero
+      setScrolled(window.scrollY > window.innerHeight * 0.7);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -40,15 +40,15 @@ export default function Header() {
           <Link href="/artistes" className="hover:text-violet-600 transition">
             Artistes
           </Link>
-          <a href="#events" className="hover:text-violet-600 transition">
+          <Link href="/programme" className="hover:text-violet-600 transition">
             Programme
-          </a>
+          </Link>
           <a href="#faq" className="hover:text-violet-600 transition">
             FAQ
           </a>
-          <a href="#map" className="hover:text-violet-600 transition">
-            Plan
-          </a>
+          <Link href="/carte" className="hover:text-violet-600 transition">
+            Carte
+          </Link>
         </nav>
 
         {/* CTA */}
